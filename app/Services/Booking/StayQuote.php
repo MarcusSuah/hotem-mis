@@ -15,7 +15,7 @@ use Carbon\CarbonImmutable;
 final readonly class StayQuote
 {
     /**
-     * @param  list<array{date: CarbonImmutable, base: Money, amount: Money}>  $nights
+     * @param  list<array{date: CarbonImmutable, base: Money, base_total: Money, amount: Money, service: Money, tax: Money}>  $nights
      */
     public function __construct(
         public array $nights,
@@ -47,6 +47,8 @@ final readonly class StayQuote
             'nights' => array_map(fn (array $night): array => [
                 'date' => $night['date']->toDateString(),
                 'amount' => $night['amount'],
+                'service_charge' => $night['service'],
+                'tax' => $night['tax'],
                 'base' => $night['base'],
             ], $this->nights),
             'room_total' => $this->roomTotal,

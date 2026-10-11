@@ -1,12 +1,15 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     ArrowLeftRight,
     BadgeCheck,
     CalendarClock,
     CalendarX,
+    LogIn,
+    LogOut,
     Mail,
     Pencil,
     Phone,
+    Receipt,
     Star,
     UserX,
 } from 'lucide-react';
@@ -106,18 +109,23 @@ type RoomOption = {
 type Props = {
     reservation: Reservation;
     roomOptions: RoomOption[];
+    folio: string | null;
     can: {
         update: boolean;
         confirm: boolean;
         cancel: boolean;
         noShow: boolean;
         assignRoom: boolean;
+        checkIn: boolean;
+        checkOut: boolean;
+        viewFolio: boolean;
     };
 };
 
 export default function ShowReservation({
     reservation,
     roomOptions,
+    folio,
     can,
 }: Props) {
     const [dialog, setDialog] = useState<
@@ -151,6 +159,38 @@ export default function ShowReservation({
                     description={`${reservation.source_label} booking${reservation.booked_by ? ` by ${reservation.booked_by}` : ''} · created ${formatDateTime(reservation.timestamps.created_at)}`}
                     actions={
                         <>
+                            {can.checkIn && (
+                                <Button asChild>
+                                    <Link
+                                        href={admin.frontDesk.checkIn(
+                                            reservation.reference,
+                                        )}
+                                    >
+                                        <LogIn />
+                                        Check in
+                                    </Link>
+                                </Button>
+                            )}
+                            {can.checkOut && (
+                                <Button asChild>
+                                    <Link
+                                        href={admin.frontDesk.checkOut(
+                                            reservation.reference,
+                                        )}
+                                    >
+                                        <LogOut />
+                                        Check out
+                                    </Link>
+                                </Button>
+                            )}
+                            {folio && can.viewFolio && (
+                                <Button variant="outline" asChild>
+                                    <Link href={admin.folios.show(folio)}>
+                                        <Receipt />
+                                        Folio
+                                    </Link>
+                                </Button>
+                            )}
                             {can.confirm && (
                                 <Button onClick={() => setDialog('confirm')}>
                                     <BadgeCheck />

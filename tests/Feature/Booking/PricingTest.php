@@ -73,7 +73,7 @@ it('adds service charge to the room total and tax to both', function () {
         ->and($quote->isConverted())->toBeFalse();
 });
 
-it('converts every line with one rate snapshot when charging in Liberian dollars', function () {
+it('converts every nightly line with one rate snapshot when charging in Liberian dollars', function () {
     setTaxes(tax: '10');
     ExchangeRate::factory()->rate('190.5')->create(['effective_at' => now()->subDay()]);
     $type = RoomType::factory()->rate(10050)->create();
@@ -83,8 +83,9 @@ it('converts every line with one rate snapshot when charging in Liberian dollars
     expect($quote->exchangeRate)->toBe('190.50000000')
         ->and(array_map(fn ($night) => $night['amount']->format(), $quote->nights))->toBe(['LRD 19,145.25', 'LRD 19,145.25'])
         ->and($quote->roomTotal->format())->toBe('LRD 38,290.50')
-        ->and($quote->tax->format())->toBe('LRD 3,829.05')
-        ->and($quote->total->format())->toBe('LRD 42,119.55')
+        ->and($quote->nights[0]['tax']->format())->toBe('LRD 1,914.53')
+        ->and($quote->tax->format())->toBe('LRD 3,829.06')
+        ->and($quote->total->format())->toBe('LRD 42,119.56')
         ->and($quote->baseTotal->format())->toBe('USD 221.10');
 });
 

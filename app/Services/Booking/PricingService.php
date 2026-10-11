@@ -66,24 +66,30 @@ class PricingService
         $taxRate = (string) $this->settings->get('booking.tax_rate', '0');
         $serviceRate = (string) $this->settings->get('booking.service_charge_rate', '0');
 
-        $baseRoomTotal = Money::sum(array_column($baseNights, 'base'), $baseCurrency);
-        $baseService = $baseRoomTotal->percentage($serviceRate);
-        $baseTax = $baseRoomTotal->add($baseService)->percentage($taxRate);
-        $baseTotal = $baseRoomTotal->add($baseService)->add($baseTax);
-
         [$rate, $rateRecord] = $this->exchangeRate($baseCurrency, $currency, $snapshotRate, $snapshotRecord);
         $convert = fn (Money $money): Money => $rate === null ? $money : $this->converter->convertWithSnapshot($money, $currency, $rate);
 
-        $nights = array_map(fn (array $night): array => [
-            'date' => $night['date'],
-            'base' => $night['base'],
-            'amount' => $convert($night['base']),
-        ], $baseNights);
+        // Each night carries its own service charge and tax so folio postings
+        // per night always add up exactly to the quoted total.
+        $nights = array_map(function (array $night) use ($serviceRate, $taxRate, $convert): array {
+            $baseService = $night['base']->percentage($serviceRate);
+            $baseTax = $night['base']->add($baseService)->percentage($taxRate);
+
+            return [
+                'date' => $night['date'],
+                'base' => $night['base'],
+                'base_total' => $night['base']->add($baseService)->add($baseTax),
+                'amount' => $convert($night['base']),
+                'service' => $convert($baseService),
+                'tax' => $convert($baseTax),
+            ];
+        }, $baseNights);
 
         $roomTotal = Money::sum(array_column($nights, 'amount'), $currency);
-        $service = $convert($baseService);
-        $tax = $convert($baseTax);
+        $service = Money::sum(array_column($nights, 'service'), $currency);
+        $tax = Money::sum(array_column($nights, 'tax'), $currency);
         $total = $roomTotal->add($service)->add($tax);
+        $baseTotal = Money::sum(array_column($nights, 'base_total'), $baseCurrency);
 
         $depositPercent = $ratePlan->deposit_percent ?? (string) $this->settings->get('booking.deposit_percent', '0');
 

@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
@@ -40,6 +41,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property Currency $base_currency
  * @property int|null $exchange_rate_id
  * @property string|null $exchange_rate
+ * @property string $tax_rate
+ * @property string $service_charge_rate
  * @property int $room_total_minor
  * @property int $extras_total_minor
  * @property int $discount_minor
@@ -67,7 +70,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'reference', 'property_id', 'guest_id', 'rate_plan_id', 'booked_by', 'source', 'status', 'payment_status',
     'check_in_date', 'check_out_date', 'nights', 'adults', 'children',
     'contact_name', 'contact_email', 'contact_phone', 'special_requests',
-    'currency', 'base_currency', 'exchange_rate_id', 'exchange_rate',
+    'currency', 'base_currency', 'exchange_rate_id', 'exchange_rate', 'tax_rate', 'service_charge_rate',
     'room_total_minor', 'extras_total_minor', 'discount_minor', 'service_charge_minor', 'tax_minor',
     'total_minor', 'base_total_minor', 'deposit_due_minor', 'is_complimentary',
     'cancellation_policy_snapshot', 'idempotency_key', 'expires_at',
@@ -112,6 +115,14 @@ class Reservation extends Model
     public function exchangeRateRecord(): BelongsTo
     {
         return $this->belongsTo(ExchangeRate::class, 'exchange_rate_id');
+    }
+
+    /**
+     * @return HasOne<Folio, $this>
+     */
+    public function folio(): HasOne
+    {
+        return $this->hasOne(Folio::class);
     }
 
     /**
@@ -213,6 +224,8 @@ class Reservation extends Model
             'check_in_date' => 'immutable_date',
             'check_out_date' => 'immutable_date',
             'exchange_rate' => 'decimal:8',
+            'tax_rate' => 'decimal:2',
+            'service_charge_rate' => 'decimal:2',
             'room_total_minor' => 'integer',
             'extras_total_minor' => 'integer',
             'discount_minor' => 'integer',

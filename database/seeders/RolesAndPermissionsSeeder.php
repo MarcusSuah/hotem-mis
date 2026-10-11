@@ -12,9 +12,10 @@ use Spatie\Permission\PermissionRegistrar;
 /**
  * Idempotently provisions every permission and the default roles.
  *
- * Default roles only receive missing defaults, so permission changes made by
- * administrators are preserved on rerun. The Super Admin role is always
- * synced to the complete permission set.
+ * - New roles receive their full default permission set.
+ * - Existing roles keep any changes administrators made, and only receive
+ *   permissions introduced since the last run that belong to their defaults.
+ * - The Super Admin role is always synced to the complete permission set.
  */
 class RolesAndPermissionsSeeder extends Seeder
 {
@@ -22,8 +23,14 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        $introduced = [];
+
         foreach (Permission::names() as $name) {
-            PermissionModel::findOrCreate($name, 'web');
+            $permission = PermissionModel::findOrCreate($name, 'web');
+
+            if ($permission->wasRecentlyCreated) {
+                $introduced[] = $name;
+            }
         }
 
         foreach (SystemRole::cases() as $systemRole) {
@@ -35,11 +42,18 @@ class RolesAndPermissionsSeeder extends Seeder
                 continue;
             }
 
+            $defaults = array_map(fn (Permission $permission): string => $permission->value, $systemRole->defaultPermissions());
+
             if ($role->wasRecentlyCreated) {
-                $role->syncPermissions(array_map(
-                    fn (Permission $permission): string => $permission->value,
-                    $systemRole->defaultPermissions(),
-                ));
+                $role->syncPermissions($defaults);
+
+                continue;
+            }
+
+            $newDefaults = array_values(array_intersect($defaults, $introduced));
+
+            if ($newDefaults !== []) {
+                $role->givePermissionTo($newDefaults);
             }
         }
 

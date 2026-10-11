@@ -46,7 +46,7 @@ enum SystemRole: string
                 Permission::BookingsView, Permission::BookingsCreate, Permission::BookingsUpdate, Permission::BookingsCancel,
                 Permission::BookingsAssignRoom, Permission::CheckinManage, Permission::CheckoutManage, Permission::NightAuditRun,
                 Permission::GuestsView, Permission::GuestsCreate, Permission::GuestsUpdate, Permission::GuestsViewIdentity,
-                Permission::FoliosManage, Permission::PaymentsView, Permission::InvoicesView, Permission::ExpensesManage,
+                Permission::FoliosManage, Permission::FoliosOverride, Permission::PaymentsView, Permission::InvoicesView, Permission::ExpensesManage,
                 Permission::HousekeepingManage, Permission::MaintenanceManage, Permission::MaintenanceRequest,
                 Permission::InventoryManage, Permission::ServicesManage, Permission::OrdersManage, Permission::StaffManage,
                 Permission::ReportsView, Permission::ReportsExport, Permission::WebsiteManage, Permission::ReviewsModerate,
@@ -68,7 +68,7 @@ enum SystemRole: string
             ],
             self::Accountant => [
                 Permission::DashboardView, Permission::BookingsView, Permission::GuestsView,
-                Permission::FoliosManage, Permission::PaymentsView, Permission::PaymentsCreate, Permission::PaymentsRefund,
+                Permission::FoliosManage, Permission::FoliosOverride, Permission::PaymentsView, Permission::PaymentsCreate, Permission::PaymentsRefund,
                 Permission::InvoicesView, Permission::InvoicesCreate, Permission::ExpensesManage,
                 Permission::ExchangeRatesManage, Permission::ReportsView, Permission::ReportsExport,
             ],

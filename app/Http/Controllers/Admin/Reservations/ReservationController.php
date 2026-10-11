@@ -168,7 +168,7 @@ class ReservationController extends Controller
         Gate::authorize('view', $reservation);
 
         $reservation->load([
-            'guest', 'ratePlan', 'bookedBy',
+            'guest', 'ratePlan', 'bookedBy', 'folio',
             'activeAllocations.room', 'activeAllocations.roomType',
             'allocations.room', 'allocations.roomType',
             'nightRecords.room', 'statusHistory.user',
@@ -180,7 +180,11 @@ class ReservationController extends Controller
         return Inertia::render('admin/reservations/show', [
             'reservation' => (new ReservationDetailResource($reservation))->resolve(),
             'roomOptions' => fn () => $this->roomOptions($reservation, $current?->room_type_id, $availability),
+            'folio' => $reservation->folio?->number,
             'can' => [
+                'checkIn' => $user->can('checkin.manage') && in_array($reservation->status, [ReservationStatus::Confirmed, ReservationStatus::Pending], true),
+                'checkOut' => $user->can('checkout.manage') && $reservation->status === ReservationStatus::CheckedIn,
+                'viewFolio' => $user->can('folios.manage') || $user->can('payments.view'),
                 'update' => $user->can('update', $reservation) && $reservation->status->isModifiable(),
                 'confirm' => $user->can('update', $reservation) && $reservation->status->canTransitionTo(ReservationStatus::Confirmed),
                 'cancel' => $user->can('cancel', $reservation) && $reservation->status->canTransitionTo(ReservationStatus::Cancelled),

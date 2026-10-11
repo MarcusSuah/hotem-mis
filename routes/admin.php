@@ -1,6 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\Billing\ExchangeRateController;
+use App\Http\Controllers\Admin\Billing\FolioController;
+use App\Http\Controllers\Admin\Billing\InvoiceController;
+use App\Http\Controllers\Admin\Billing\PaymentController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FrontDesk\FrontDeskController;
+use App\Http\Controllers\Admin\FrontDesk\NightAuditController;
+use App\Http\Controllers\Admin\FrontDesk\StayController;
+use App\Http\Controllers\Admin\Guests\GuestController;
 use App\Http\Controllers\Admin\Identity\AuditLogController;
 use App\Http\Controllers\Admin\Identity\BulkUserDeletionController;
 use App\Http\Controllers\Admin\Identity\PermissionController;
@@ -62,3 +70,32 @@ Route::post('reservations/{reservation}/confirmation', [ReservationStatusControl
 Route::post('reservations/{reservation}/cancellation', [ReservationStatusController::class, 'cancel'])->name('reservations.cancel');
 Route::post('reservations/{reservation}/no-show', [ReservationStatusController::class, 'noShow'])->name('reservations.no-show');
 Route::put('reservations/{reservation}/room', [ReservationRoomController::class, 'update'])->name('reservations.room.update');
+
+// Front desk
+Route::get('front-desk', FrontDeskController::class)->name('front-desk.index');
+Route::get('front-desk/{reservation}/check-in', [StayController::class, 'showCheckIn'])->name('front-desk.check-in');
+Route::post('front-desk/{reservation}/check-in', [StayController::class, 'checkIn'])->name('front-desk.check-in.store');
+Route::get('front-desk/{reservation}/check-out', [StayController::class, 'showCheckOut'])->name('front-desk.check-out');
+Route::post('front-desk/{reservation}/check-out', [StayController::class, 'checkOut'])->name('front-desk.check-out.store');
+Route::post('front-desk/{reservation}/extension', [StayController::class, 'extend'])->name('front-desk.extend');
+Route::get('front-desk/{reservation}/registration-card', [StayController::class, 'registrationCard'])->name('front-desk.registration-card');
+Route::get('night-audit', [NightAuditController::class, 'index'])->name('night-audit.index');
+Route::post('night-audit', [NightAuditController::class, 'store'])->name('night-audit.store');
+
+// Guests
+Route::resource('guests', GuestController::class)->only(['index', 'show', 'store', 'update']);
+
+// Billing
+Route::get('folios/{folio}', [FolioController::class, 'show'])->name('folios.show');
+Route::post('folios/{folio}/charges', [FolioController::class, 'storeCharge'])->name('folios.charges.store');
+Route::post('folio-charges/{charge}/reversal', [FolioController::class, 'reverseCharge'])->name('folio-charges.reverse');
+Route::post('folios/{folio}/payments', [PaymentController::class, 'store'])->name('folios.payments.store');
+Route::post('folios/{folio}/invoices', [InvoiceController::class, 'store'])->name('folios.invoices.store');
+Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+Route::post('payments/{payment}/refunds', [PaymentController::class, 'refund'])->name('payments.refunds.store');
+Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
+Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+Route::post('invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void');
+Route::get('exchange-rates', [ExchangeRateController::class, 'index'])->name('exchange-rates.index');
+Route::post('exchange-rates', [ExchangeRateController::class, 'store'])->name('exchange-rates.store');

@@ -17,9 +17,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $room_type_id
  * @property CarbonImmutable $night_date
  * @property int $rate_minor
+ * @property int $service_charge_minor
+ * @property int $tax_minor
  * @property int $base_rate_minor
  */
-#[Fillable(['reservation_id', 'reservation_room_id', 'room_id', 'room_type_id', 'night_date', 'rate_minor', 'base_rate_minor'])]
+#[Fillable(['reservation_id', 'reservation_room_id', 'room_id', 'room_type_id', 'night_date', 'rate_minor', 'service_charge_minor', 'tax_minor', 'base_rate_minor'])]
 class ReservationNight extends Model
 {
     /**
@@ -46,6 +48,8 @@ class ReservationNight extends Model
         return [
             'night_date' => 'immutable_date',
             'rate_minor' => 'integer',
+            'service_charge_minor' => 'integer',
+            'tax_minor' => 'integer',
             'base_rate_minor' => 'integer',
         ];
     }

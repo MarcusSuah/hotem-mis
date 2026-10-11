@@ -44,6 +44,7 @@ enum Permission: string
     case GuestsViewIdentity = 'guests.view-identity';
 
     case FoliosManage = 'folios.manage';
+    case FoliosOverride = 'folios.override';
     case PaymentsView = 'payments.view';
     case PaymentsCreate = 'payments.create';
     case PaymentsRefund = 'payments.refund';
@@ -79,7 +80,7 @@ enum Permission: string
             in_array($this, [self::RoomsView, self::RoomsCreate, self::RoomsUpdate, self::RoomsDelete, self::RoomTypesManage, self::RatePlansManage, self::RoomBlocksManage], true) => 'Rooms',
             in_array($this, [self::BookingsView, self::BookingsCreate, self::BookingsUpdate, self::BookingsCancel, self::BookingsAssignRoom, self::CheckinManage, self::CheckoutManage, self::NightAuditRun], true) => 'Reservations & Front Desk',
             in_array($this, [self::GuestsView, self::GuestsCreate, self::GuestsUpdate, self::GuestsViewIdentity], true) => 'Guests',
-            in_array($this, [self::FoliosManage, self::PaymentsView, self::PaymentsCreate, self::PaymentsRefund, self::InvoicesView, self::InvoicesCreate, self::ExpensesManage, self::ExchangeRatesManage], true) => 'Finance',
+            in_array($this, [self::FoliosManage, self::FoliosOverride, self::PaymentsView, self::PaymentsCreate, self::PaymentsRefund, self::InvoicesView, self::InvoicesCreate, self::ExpensesManage, self::ExchangeRatesManage], true) => 'Finance',
             in_array($this, [self::ReportsView, self::ReportsExport], true) => 'Reports',
             in_array($this, [self::SettingsManage, self::WebsiteManage, self::ReviewsModerate], true) => 'Website & Settings',
             default => 'Operations',

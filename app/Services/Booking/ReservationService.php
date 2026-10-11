@@ -2,6 +2,7 @@
 
 namespace App\Services\Booking;
 
+use App\Enums\ChargeCategory;
 use App\Enums\ReservationStatus;
 use App\Models\CancellationPolicy;
 use App\Models\RatePlan;
@@ -11,7 +12,10 @@ use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
+use App\Services\Billing\FolioService;
 use App\Services\Settings\SettingsRepository;
+use App\Support\Money\Money;
+use BcMath\Number;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +34,7 @@ class ReservationService
         private CancellationCalculator $cancellations,
         private ReferenceGenerator $references,
         private SettingsRepository $settings,
+        private FolioService $folios,
         private AuditLogger $audit,
     ) {}
 
@@ -81,6 +86,8 @@ class ReservationService
                     'base_currency' => $quote->baseCurrency,
                     'exchange_rate_id' => $quote->exchangeRateRecord?->id,
                     'exchange_rate' => $quote->exchangeRate,
+                    'tax_rate' => $quote->taxRate,
+                    'service_charge_rate' => $quote->serviceChargeRate,
                     'room_total_minor' => $quote->roomTotal->minor,
                     'service_charge_minor' => $quote->serviceCharge->minor,
                     'tax_minor' => $quote->tax->minor,
@@ -100,6 +107,7 @@ class ReservationService
                 }
 
                 $this->allocate($reservation, $room, $data->stay, $quote, $actor);
+                $this->folios->openFor($reservation);
 
                 $reservation->occupants()->create([
                     'guest_id' => $data->guest->id,
@@ -136,19 +144,29 @@ class ReservationService
         });
     }
 
+    /**
+     * Cancel and release the room. Any fee is posted to the folio as a charge,
+     * so prepaid amounts above the fee become refundable credit.
+     */
     public function cancel(Reservation $reservation, string $reason, ?User $actor = null, bool $waiveFee = false): Reservation
     {
-        return $this->transition($reservation, ReservationStatus::Cancelled, $actor, $reason, function (Reservation $locked) use ($reason, $waiveFee): void {
-            $fee = $waiveFee ? 0 : $this->cancellations->fee($locked, CarbonImmutable::now())->minor;
+        return DB::transaction(function () use ($reservation, $reason, $actor, $waiveFee): Reservation {
+            $cancelled = $this->transition($reservation, ReservationStatus::Cancelled, $actor, $reason, function (Reservation $locked) use ($reason, $waiveFee): void {
+                $fee = $waiveFee ? 0 : $this->cancellations->fee($locked, CarbonImmutable::now())->minor;
 
-            $locked->forceFill([
-                'cancelled_at' => now(),
-                'cancellation_reason' => $reason,
-                'cancellation_fee_minor' => $fee,
-                'expires_at' => null,
-            ]);
+                $locked->forceFill([
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => $reason,
+                    'cancellation_fee_minor' => $fee,
+                    'expires_at' => null,
+                ]);
 
-            $this->releaseAllocations($locked, 'Reservation cancelled');
+                $this->releaseAllocations($locked, 'Reservation cancelled');
+            });
+
+            $this->postFee($cancelled, ChargeCategory::CancellationFee, 'Cancellation fee', $actor);
+
+            return $cancelled;
         });
     }
 
@@ -158,14 +176,38 @@ class ReservationService
             throw new BookingException('A reservation can only be marked as a no-show on or after its arrival date.', 'status');
         }
 
-        return $this->transition($reservation, ReservationStatus::NoShow, $actor, 'Guest did not arrive', function (Reservation $locked): void {
-            $locked->forceFill([
-                'no_show_at' => now(),
-                'cancellation_fee_minor' => $this->cancellations->noShowFee($locked)->minor,
-            ]);
+        return DB::transaction(function () use ($reservation, $actor): Reservation {
+            $noShow = $this->transition($reservation, ReservationStatus::NoShow, $actor, 'Guest did not arrive', function (Reservation $locked): void {
+                $locked->forceFill([
+                    'no_show_at' => now(),
+                    'cancellation_fee_minor' => $this->cancellations->noShowFee($locked)->minor,
+                ]);
 
-            $this->releaseAllocations($locked, 'No-show');
+                $this->releaseAllocations($locked, 'No-show');
+            });
+
+            $this->postFee($noShow, ChargeCategory::NoShowFee, 'No-show fee', $actor);
+
+            return $noShow;
         });
+    }
+
+    private function postFee(Reservation $reservation, ChargeCategory $category, string $description, ?User $actor): void
+    {
+        $folio = $this->folios->openFor($reservation);
+
+        if ($reservation->cancellation_fee_minor > 0) {
+            $this->folios->post(
+                $folio,
+                $category,
+                "{$description} — {$reservation->reference}",
+                $reservation->money($reservation->cancellation_fee_minor),
+                actor: $actor,
+                idempotencyKey: "{$category->value}:{$reservation->id}",
+            );
+        } else {
+            $this->folios->syncReservation($folio);
+        }
     }
 
     /**
@@ -205,6 +247,8 @@ class ReservationService
                 'nights' => $stay->nights(),
                 'adults' => $adults,
                 'children' => $children,
+                'tax_rate' => $quote->taxRate,
+                'service_charge_rate' => $quote->serviceChargeRate,
                 'room_total_minor' => $quote->roomTotal->minor,
                 'service_charge_minor' => $quote->serviceCharge->minor,
                 'tax_minor' => $quote->tax->minor,
@@ -219,6 +263,125 @@ class ReservationService
 
             return $locked;
         });
+    }
+
+    /**
+     * Add nights to an in-house stay in the guest's current room. The extra
+     * nights are priced at current rates with the exchange rate agreed at booking.
+     */
+    public function extendStay(Reservation $reservation, CarbonImmutable $newCheckOut, ?User $actor = null): Reservation
+    {
+        if ($reservation->status !== ReservationStatus::CheckedIn) {
+            throw new BookingException('Only in-house stays can be extended here; modify upcoming reservations instead.', 'check_out_date');
+        }
+
+        if ($newCheckOut->lessThanOrEqualTo($reservation->check_out_date)) {
+            throw new BookingException('The new departure date must be after the current one. Use check-out for early departures.', 'check_out_date');
+        }
+
+        return DB::transaction(function () use ($reservation, $newCheckOut, $actor): Reservation {
+            $locked = Reservation::query()->lockForUpdate()->findOrFail($reservation->id);
+            $allocation = $locked->activeAllocations()->with(['room', 'roomType'])->orderByDesc('end_date')->firstOrFail();
+            $extra = new StayPeriod($locked->check_out_date, $newCheckOut);
+
+            $this->ensureStayIsAllowed(new StayPeriod($locked->check_in_date, $newCheckOut), null);
+
+            Room::query()->whereKey($allocation->room_id)->lockForUpdate()->first();
+
+            if (! $this->availability->isRoomAvailable($allocation->room, $extra, $locked)) {
+                throw new BookingException("Room {$allocation->room->number} is not free for the extra nights. Move the guest to another room first.", 'check_out_date');
+            }
+
+            $quote = $this->pricing->quote(
+                $allocation->roomType, $locked->ratePlan, $extra, $locked->adults, $locked->children, $locked->currency,
+                $locked->is_complimentary, snapshotRate: $locked->exchange_rate, snapshotRecord: $locked->exchangeRateRecord,
+            );
+
+            foreach ($quote->nights as $night) {
+                $allocation->nights()->create([
+                    'reservation_id' => $locked->id,
+                    'room_id' => $allocation->room_id,
+                    'room_type_id' => $allocation->room_type_id,
+                    'night_date' => $night['date'],
+                    'rate_minor' => $night['amount']->minor,
+                    'service_charge_minor' => $night['service']->minor,
+                    'tax_minor' => $night['tax']->minor,
+                    'base_rate_minor' => $night['base']->minor,
+                ]);
+            }
+
+            $allocation->forceFill([
+                'end_date' => $newCheckOut,
+                'room_total_minor' => $allocation->room_total_minor + $quote->roomTotal->minor,
+            ])->save();
+
+            $previousCheckOut = $locked->check_out_date->toDateString();
+
+            $locked->forceFill([
+                'check_out_date' => $newCheckOut,
+                'nights' => $locked->nights + $extra->nights(),
+                'room_total_minor' => $locked->room_total_minor + $quote->roomTotal->minor,
+                'service_charge_minor' => $locked->service_charge_minor + $quote->serviceCharge->minor,
+                'tax_minor' => $locked->tax_minor + $quote->tax->minor,
+                'total_minor' => $locked->total_minor + $quote->total->minor,
+                'base_total_minor' => $locked->base_total_minor + $quote->baseTotal->minor,
+            ])->save();
+
+            $this->folios->syncReservation($this->folios->openFor($locked));
+
+            $this->audit->record('reservation.extended', $locked, ['check_out' => $previousCheckOut], [
+                'check_out' => $newCheckOut->toDateString(),
+                'additional' => $quote->total->format(),
+            ], $actor);
+
+            return $locked;
+        });
+    }
+
+    /**
+     * Shorten an in-house stay that ends early: nights from `$departure`
+     * onwards are released and removed from the agreed total.
+     */
+    public function releaseNightsFrom(Reservation $reservation, CarbonImmutable $departure): void
+    {
+        $released = $reservation->nightRecords()->where('night_date', '>=', $departure->toDateString())->get();
+
+        if ($released->isEmpty()) {
+            return;
+        }
+
+        $room = (int) $released->sum('rate_minor');
+        $service = (int) $released->sum('service_charge_minor');
+        $tax = (int) $released->sum('tax_minor');
+        $releasedTotal = $reservation->money($room + $service + $tax);
+
+        // Express the released amount in base currency with the booking's own rate snapshot.
+        $base = $reservation->exchange_rate === null
+            ? $releasedTotal->minor
+            : $releasedTotal->multiply((new Number(1))->div(new Number(Money::numeric((string) $reservation->exchange_rate)), 12)->value)->minor;
+
+        $reservation->nightRecords()->where('night_date', '>=', $departure->toDateString())->delete();
+
+        foreach ($reservation->activeAllocations()->get() as $allocation) {
+            if ($allocation->start_date->greaterThanOrEqualTo($departure)) {
+                $allocation->forceFill(['released_at' => now(), 'release_reason' => 'Early departure'])->save();
+            } elseif ($allocation->end_date->greaterThan($departure)) {
+                $allocation->forceFill([
+                    'end_date' => $departure,
+                    'room_total_minor' => (int) $allocation->nights()->sum('rate_minor'),
+                ])->save();
+            }
+        }
+
+        $reservation->forceFill([
+            'check_out_date' => $departure,
+            'nights' => (int) $reservation->check_in_date->diffInDays($departure),
+            'room_total_minor' => $reservation->room_total_minor - $room,
+            'service_charge_minor' => $reservation->service_charge_minor - $service,
+            'tax_minor' => $reservation->tax_minor - $tax,
+            'total_minor' => $reservation->total_minor - $room - $service - $tax,
+            'base_total_minor' => max(0, $reservation->base_total_minor - $base),
+        ])->save();
     }
 
     /**
@@ -289,6 +452,8 @@ class ReservationService
                     'room_type_id' => $newRoom->room_type_id,
                     'night_date' => $night->night_date,
                     'rate_minor' => $night->rate_minor,
+                    'service_charge_minor' => $night->service_charge_minor,
+                    'tax_minor' => $night->tax_minor,
                     'base_rate_minor' => $night->base_rate_minor,
                 ]);
             }
@@ -404,6 +569,8 @@ class ReservationService
                 'room_type_id' => $room->room_type_id,
                 'night_date' => $night['date'],
                 'rate_minor' => $night['amount']->minor,
+                'service_charge_minor' => $night['service']->minor,
+                'tax_minor' => $night['tax']->minor,
                 'base_rate_minor' => $night['base']->minor,
             ]);
         }
