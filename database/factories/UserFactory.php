@@ -2,10 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Enums\SystemRole;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * @extends Factory<User>
@@ -56,5 +59,42 @@ class UserFactory extends Factory
             'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
             'two_factor_confirmed_at' => now(),
         ]);
+    }
+
+    /**
+     * Assign a role after creation, provisioning default roles when missing.
+     */
+    public function withRole(SystemRole|string $role): static
+    {
+        $roleName = $role instanceof SystemRole ? $role->value : $role;
+
+        return $this->afterCreating(function (User $user) use ($roleName): void {
+            if (! Role::query()->where('name', $roleName)->exists()) {
+                (new RolesAndPermissionsSeeder)->run();
+            }
+
+            $user->assignRole($roleName);
+        });
+    }
+
+    /**
+     * Indicate that the account has been deactivated.
+     */
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+            'deactivated_at' => now(),
+        ]);
+    }
+
+    /**
+     * The protected Super Admin account.
+     */
+    public function protectedSuperAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_protected' => true,
+        ])->withRole(SystemRole::SuperAdmin);
     }
 }

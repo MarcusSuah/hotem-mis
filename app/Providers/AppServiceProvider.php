@@ -2,11 +2,21 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use App\Policies\RolePolicy;
+use App\Services\Audit\AuditLogger;
+use App\Services\Settings\SettingsRepository;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Spatie\Permission\Models\Role;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -15,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(SettingsRepository::class);
     }
 
     /**
@@ -24,6 +34,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureAuthorization();
+        $this->configureAuthenticationEvents();
     }
 
     /**
@@ -32,6 +44,8 @@ class AppServiceProvider extends ServiceProvider
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
+
+        Model::preventLazyLoading(! app()->isProduction());
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
@@ -46,5 +60,33 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    /**
+     * Permissions are granted explicitly; there is intentionally no Gate::before
+     * bypass, so Super Admin protection rules in policies always apply.
+     */
+    protected function configureAuthorization(): void
+    {
+        Gate::policy(Role::class, RolePolicy::class);
+    }
+
+    protected function configureAuthenticationEvents(): void
+    {
+        Event::listen(function (Login $event): void {
+            if (! $event->user instanceof User) {
+                return;
+            }
+
+            $event->user->forceFill(['last_login_at' => now()])->saveQuietly();
+
+            app(AuditLogger::class)->record('auth.login', $event->user, actor: $event->user);
+        });
+
+        Event::listen(function (Logout $event): void {
+            if ($event->user instanceof User) {
+                app(AuditLogger::class)->record('auth.logout', $event->user, actor: $event->user);
+            }
+        });
     }
 }
