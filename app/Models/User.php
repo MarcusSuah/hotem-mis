@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -95,6 +96,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isSuperAdmin(): bool
     {
         return $this->hasRole(SystemRole::SuperAdmin->value);
+    }
+
+    /**
+     * The guest profile linked to this login, if any.
+     *
+     * @return HasOne<Guest, $this>
+     */
+    public function guest(): HasOne
+    {
+        return $this->hasOne(Guest::class);
     }
 
     /**

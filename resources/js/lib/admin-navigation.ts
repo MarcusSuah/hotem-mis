@@ -1,4 +1,14 @@
-import { History, LayoutDashboard, ShieldCheck, Users } from 'lucide-react';
+import {
+    BedDouble,
+    CalendarDays,
+    CalendarRange,
+    DoorOpen,
+    History,
+    LayoutDashboard,
+    ShieldCheck,
+    Tags,
+    Users,
+} from 'lucide-react';
 import admin from '@/routes/admin';
 import type { NavGroup } from '@/types';
 
@@ -16,6 +26,46 @@ export function adminNavigation(): NavGroup[] {
                     href: admin.dashboard(),
                     icon: LayoutDashboard,
                     permissions: ['dashboard.view'],
+                },
+            ],
+        },
+        {
+            label: 'Front Office',
+            items: [
+                {
+                    title: 'Reservations',
+                    href: admin.reservations.index(),
+                    icon: CalendarDays,
+                    permissions: ['bookings.view'],
+                },
+                {
+                    title: 'Availability',
+                    href: admin.availability.index(),
+                    icon: CalendarRange,
+                    permissions: ['bookings.view'],
+                },
+            ],
+        },
+        {
+            label: 'Rooms',
+            items: [
+                {
+                    title: 'Rooms',
+                    href: admin.rooms.index(),
+                    icon: DoorOpen,
+                    permissions: ['rooms.view'],
+                },
+                {
+                    title: 'Room Types',
+                    href: admin.roomTypes.index(),
+                    icon: BedDouble,
+                    permissions: ['rooms.view'],
+                },
+                {
+                    title: 'Rates & Policies',
+                    href: admin.rates.index(),
+                    icon: Tags,
+                    permissions: ['rooms.view'],
                 },
             ],
         },
