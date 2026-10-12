@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { Facebook, Instagram, Mail, MapPin, Menu, Phone } from 'lucide-react';
 import type { ReactNode } from 'react';
 import AppLogoIcon from '@/components/app-logo-icon';
+import { CurrencySwitcher } from '@/components/currency-switcher';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -112,6 +113,7 @@ export default function SiteLayout({ children }: { children: ReactNode }) {
                     </nav>
 
                     <div className="flex items-center gap-1">
+                        <CurrencySwitcher className="border-white/20 bg-transparent text-ivory [&_svg]:text-ivory/70" />
                         <div className="hidden items-center gap-1 md:flex">
                             {accountLinks}
                         </div>

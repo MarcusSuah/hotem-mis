@@ -1,7 +1,9 @@
 import {
     ArrowRightLeft,
     Banknote,
+    BarChart3,
     Boxes,
+    Grid3x3,
     Globe,
     Images,
     Inbox,
@@ -108,6 +110,23 @@ export function adminNavigation(): NavGroup[] {
                     href: admin.exchangeRates.index(),
                     icon: ArrowRightLeft,
                     permissions: ['exchange-rates.manage', 'reports.view'],
+                },
+            ],
+        },
+        {
+            label: 'Reports',
+            items: [
+                {
+                    title: 'Reports',
+                    href: admin.reports.index(),
+                    icon: BarChart3,
+                    permissions: ['reports.view'],
+                },
+                {
+                    title: 'Room Usage',
+                    href: admin.reports.heatmap(),
+                    icon: Grid3x3,
+                    permissions: ['reports.view'],
                 },
             ],
         },

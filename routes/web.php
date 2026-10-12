@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CurrencyPreferenceController;
 use App\Http\Controllers\HomeRedirectController;
 use App\Http\Controllers\Site\BookingController;
 use App\Http\Controllers\Site\ContactController;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
+Route::post('currency', CurrencyPreferenceController::class)->middleware('throttle:30,1')->name('currency.update');
 
 Route::name('site.')->group(function () {
     Route::get('rooms', [RoomController::class, 'index'])->name('rooms.index');

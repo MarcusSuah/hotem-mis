@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\Operations\HousekeepingController;
 use App\Http\Controllers\Admin\Operations\MaintenanceController;
 use App\Http\Controllers\Admin\Outlets\CatalogController;
 use App\Http\Controllers\Admin\Outlets\OutletController;
+use App\Http\Controllers\Admin\Reports\ReportController;
 use App\Http\Controllers\Admin\Reservations\AvailabilityCalendarController;
 use App\Http\Controllers\Admin\Reservations\ReservationController;
 use App\Http\Controllers\Admin\Reservations\ReservationRoomController;
@@ -218,3 +219,8 @@ Route::prefix('website')->name('website.')->group(function () {
     Route::get('settings', [WebsiteManagementController::class, 'settings'])->name('settings.edit');
     Route::put('settings', [WebsiteManagementController::class, 'updateSettings'])->name('settings.update');
 });
+
+// Reports & analytics
+Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+Route::get('reports/room-usage', [ReportController::class, 'heatmap'])->name('reports.heatmap');
