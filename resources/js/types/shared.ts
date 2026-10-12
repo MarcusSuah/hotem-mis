@@ -8,6 +8,7 @@ export type HotelInfo = {
     address: string | null;
     logo_url: string | null;
     social: Record<string, string | null>;
+    url: string;
 };
 
 export type CurrencyContext = {

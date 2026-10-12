@@ -11,3 +11,4 @@ Artisan::command('inspire', function () {
 Schedule::command('hms:expire-pending-reservations')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('hms:generate-preventive-maintenance')->dailyAt('05:00')->withoutOverlapping();
 Schedule::command('hms:generate-housekeeping-tasks')->dailyAt('06:00')->withoutOverlapping();
+Schedule::command('hms:send-arrival-reminders')->dailyAt('09:00')->withoutOverlapping();

@@ -11,8 +11,7 @@ use LogicException;
 
 /**
  * Immutable stock ledger line.
- */
-/**
+ *
  * @property int $id
  * @property int $inventory_item_id
  * @property InventoryMovementType $type

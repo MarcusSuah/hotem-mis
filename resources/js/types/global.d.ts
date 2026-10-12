@@ -19,6 +19,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             currency: CurrencyContext;
             notifications: NotificationSummary | null;
+            sitePages: { title: string; slug: string }[];
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

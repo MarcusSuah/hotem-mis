@@ -63,6 +63,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property CarbonImmutable|null $checked_in_at
  * @property CarbonImmutable|null $checked_out_at
  * @property CarbonImmutable|null $no_show_at
+ * @property CarbonImmutable|null $arrival_reminder_sent_at
+ * @property CarbonImmutable|null $review_invited_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  */
@@ -115,6 +117,14 @@ class Reservation extends Model
     public function exchangeRateRecord(): BelongsTo
     {
         return $this->belongsTo(ExchangeRate::class, 'exchange_rate_id');
+    }
+
+    /**
+     * @return HasOne<Review, $this>
+     */
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
     }
 
     /**
@@ -244,6 +254,8 @@ class Reservation extends Model
             'checked_in_at' => 'immutable_datetime',
             'checked_out_at' => 'immutable_datetime',
             'no_show_at' => 'immutable_datetime',
+            'arrival_reminder_sent_at' => 'immutable_datetime',
+            'review_invited_at' => 'immutable_datetime',
         ];
     }
 }

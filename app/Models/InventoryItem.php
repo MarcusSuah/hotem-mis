@@ -14,8 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * A stock-keeping unit. `quantity` is a cached balance changed only through movements.
- */
-/**
+ *
  * @property int $id
  * @property int $inventory_category_id
  * @property int|null $preferred_supplier_id

@@ -39,6 +39,8 @@ class SettingsRepository
             'service_charge_rate' => '5',
             'deposit_percent' => '30',
             'pending_expiry_minutes' => 60,
+            'website_hold_hours' => 24,
+            'arrival_reminder_days' => 2,
             'max_advance_days' => 365,
             'max_stay_nights' => 30,
             'reference_prefix' => 'MLX',
@@ -56,6 +58,15 @@ class SettingsRepository
         'seo' => [
             'meta_title' => null,
             'meta_description' => null,
+        ],
+        'website' => [
+            'hero_eyebrow' => 'Monrovia, Liberia',
+            'hero_title' => 'Quiet luxury on the Atlantic coast',
+            'hero_subtitle' => 'Ocean-view rooms, Liberian hospitality and a calm place to rest between meetings or adventures.',
+            'hero_image_path' => null,
+            'about_title' => 'A calm retreat in the heart of the city',
+            'about_body' => null,
+            'booking_note' => 'Your reservation is held while our team confirms it and arranges your deposit.',
         ],
         'notifications' => [
             'booking_confirmation' => true,

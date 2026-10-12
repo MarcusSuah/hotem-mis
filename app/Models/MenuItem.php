@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Currency;
 use App\Models\Concerns\HasSlug;
+use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Database\Factories\MenuItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -29,7 +30,7 @@ use Illuminate\Support\Facades\Storage;
  * @property CarbonImmutable|null $deleted_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
- * @property string $image_url
+ * @property-read string|null $image_url
  */
 #[Fillable(['menu_category_id', 'name', 'slug', 'description', 'currency', 'price_minor', 'is_available', 'is_featured', 'display_order'])]
 class MenuItem extends Model
@@ -43,6 +44,11 @@ class MenuItem extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(MenuCategory::class, 'menu_category_id');
+    }
+
+    public function price(): Money
+    {
+        return Money::ofMinor($this->price_minor, $this->currency);
     }
 
     /**

@@ -13,8 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Recurring preventive maintenance that generates requests when due.
- */
-/**
+ *
  * @property int $id
  * @property string $title
  * @property string|null $description

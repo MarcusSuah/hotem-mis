@@ -98,7 +98,7 @@ class ReservationService
                     'cancellation_policy_snapshot' => $policy?->snapshot() ?? ['penalty_type' => 'none'],
                     'idempotency_key' => $data->idempotencyKey,
                     'expires_at' => $status === ReservationStatus::Pending
-                        ? now()->addMinutes((int) $this->settings->get('booking.pending_expiry_minutes', 60))
+                        ? now()->addMinutes($data->holdMinutes ?? (int) $this->settings->get('booking.pending_expiry_minutes', 60))
                         : null,
                 ]);
 

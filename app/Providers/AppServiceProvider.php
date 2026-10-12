@@ -9,11 +9,14 @@ use App\Services\Settings\SettingsRepository;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Models\Role;
@@ -36,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureAuthorization();
         $this->configureAuthenticationEvents();
+        $this->configureRateLimiting();
     }
 
     /**
@@ -69,6 +73,15 @@ class AppServiceProvider extends ServiceProvider
     protected function configureAuthorization(): void
     {
         Gate::policy(Role::class, RolePolicy::class);
+    }
+
+    /**
+     * Public website forms are open to anonymous visitors, so they are throttled per IP.
+     */
+    protected function configureRateLimiting(): void
+    {
+        RateLimiter::for('public-booking', fn (Request $request) => Limit::perMinute(6)->by($request->ip()));
+        RateLimiter::for('public-contact', fn (Request $request) => Limit::perMinute(3)->by($request->ip()));
     }
 
     protected function configureAuthenticationEvents(): void

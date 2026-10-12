@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             HotelInventorySeeder::class,
             DemoReservationSeeder::class,
             DemoOperationsSeeder::class,
+            DemoWebsiteSeeder::class,
         ]);
     }
 }

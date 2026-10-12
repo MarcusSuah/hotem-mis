@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Enums\Currency;
+use App\Models\Page;
+use App\Services\Currency\DisplayCurrencyResolver;
 use App\Services\Settings\SettingsRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -19,7 +21,10 @@ class HandleInertiaRequests extends Middleware
      */
     protected $rootView = 'app';
 
-    public function __construct(private SettingsRepository $settings) {}
+    public function __construct(
+        private SettingsRepository $settings,
+        private DisplayCurrencyResolver $displayCurrency,
+    ) {}
 
     /**
      * Determines the current asset version.
@@ -54,7 +59,9 @@ class HandleInertiaRequests extends Middleware
                 'address' => $hotel['address'] ?? null,
                 'logo_url' => filled($hotel['logo_path'] ?? null) ? Storage::disk('public')->url($hotel['logo_path']) : null,
                 'social' => $this->settings->group('social'),
+                'url' => rtrim((string) config('app.url'), '/'),
             ],
+            'sitePages' => fn () => $request->routeIs('admin.*') ? [] : Page::query()->published()->where('show_in_footer', true)->orderBy('display_order')->get(['title', 'slug']),
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,
@@ -74,7 +81,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'currency' => [
                 'base' => $this->settings->get('currency.base'),
-                'display' => $this->displayCurrency($request),
+                'display' => $this->displayCurrency->resolve($request)->value,
                 'available' => Currency::codes(),
             ],
             'notifications' => fn () => $user?->isStaff() ? [
@@ -89,21 +96,5 @@ class HandleInertiaRequests extends Middleware
             ] : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
-    }
-
-    /**
-     * The guest's display preference: saved profile value, then cookie, then the hotel default.
-     */
-    private function displayCurrency(Request $request): string
-    {
-        $saved = $request->user()?->preferred_currency;
-
-        if ($saved instanceof Currency) {
-            return $saved->value;
-        }
-
-        $fromCookie = Currency::tryFrom($request->cookies->getString((string) config('hms.currency.cookie')));
-
-        return $fromCookie->value ?? (string) $this->settings->get('currency.default_display', 'USD');
     }
 }

@@ -16,8 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * An employee record, separate from any login account.
- */
-/**
+ *
  * @property int $id
  * @property int|null $user_id
  * @property int $department_id
@@ -35,7 +34,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property CarbonImmutable|null $deleted_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
- * @property string $full_name
+ * @property-read string $full_name
  */
 #[Fillable(['user_id', 'department_id', 'employee_number', 'first_name', 'last_name', 'job_title', 'employment_type', 'hire_date', 'email', 'phone', 'emergency_contact_name', 'emergency_contact_phone', 'is_active'])]
 #[Hidden(['emergency_contact_name', 'emergency_contact_phone'])]

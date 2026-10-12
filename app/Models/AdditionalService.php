@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\Currency;
 use App\Enums\ServiceCategory;
 use App\Models\Concerns\HasSlug;
+use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Database\Factories\AdditionalServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -17,8 +18,7 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * A bookable guest service such as a spa treatment or airport transfer.
- */
-/**
+ *
  * @property int $id
  * @property string $name
  * @property string $slug
@@ -35,7 +35,7 @@ use Illuminate\Support\Facades\Storage;
  * @property CarbonImmutable|null $deleted_at
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
- * @property string $image_url
+ * @property-read string|null $image_url
  */
 #[Fillable(['name', 'slug', 'category', 'short_description', 'description', 'currency', 'price_minor', 'unit', 'is_active', 'is_featured', 'display_order'])]
 class AdditionalService extends Model
@@ -49,6 +49,11 @@ class AdditionalService extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(ServiceOrder::class);
+    }
+
+    public function price(): Money
+    {
+        return Money::ofMinor($this->price_minor, $this->currency);
     }
 
     /**

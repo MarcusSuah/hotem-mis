@@ -30,5 +30,6 @@ final readonly class NewReservation
         public ?string $contactName = null,
         public ?string $contactEmail = null,
         public ?string $contactPhone = null,
+        public ?int $holdMinutes = null,
     ) {}
 }

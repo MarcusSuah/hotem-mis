@@ -35,6 +35,8 @@ use App\Http\Controllers\Admin\Rooms\RoomController;
 use App\Http\Controllers\Admin\Rooms\RoomTypeController;
 use App\Http\Controllers\Admin\Rooms\SeasonalRateController;
 use App\Http\Controllers\Admin\Staff\StaffController;
+use App\Http\Controllers\Admin\Website\ContentController;
+use App\Http\Controllers\Admin\Website\WebsiteManagementController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -188,3 +190,31 @@ Route::put('complaints/{complaint}', [GuestCareController::class, 'updateComplai
 Route::post('guests/{guest}/preferences', [GuestCareController::class, 'storePreference'])->name('guests.preferences.store');
 Route::delete('guests/{guest}/preferences/{preference}', [GuestCareController::class, 'destroyPreference'])->name('guests.preferences.destroy');
 Route::post('guests/{guest}/loyalty', [GuestCareController::class, 'adjustLoyalty'])->name('guests.loyalty.store');
+
+// Website & CMS
+Route::prefix('website')->name('website.')->group(function () {
+    Route::get('content', [ContentController::class, 'index'])->name('content.index');
+    Route::post('pages', [ContentController::class, 'storePage'])->name('pages.store');
+    Route::put('pages/{page}', [ContentController::class, 'updatePage'])->name('pages.update');
+    Route::delete('pages/{page}', [ContentController::class, 'destroyPage'])->name('pages.destroy');
+    Route::post('posts', [ContentController::class, 'storePost'])->name('posts.store');
+    Route::put('posts/{post}', [ContentController::class, 'updatePost'])->name('posts.update');
+    Route::delete('posts/{post}', [ContentController::class, 'destroyPost'])->name('posts.destroy');
+    Route::post('events', [ContentController::class, 'storeEvent'])->name('events.store');
+    Route::put('events/{event}', [ContentController::class, 'updateEvent'])->name('events.update');
+    Route::delete('events/{event}', [ContentController::class, 'destroyEvent'])->name('events.destroy');
+    Route::post('offers', [ContentController::class, 'storeOffer'])->name('offers.store');
+    Route::put('offers/{offer}', [ContentController::class, 'updateOffer'])->name('offers.update');
+    Route::delete('offers/{offer}', [ContentController::class, 'destroyOffer'])->name('offers.destroy');
+
+    Route::get('gallery', [WebsiteManagementController::class, 'gallery'])->name('gallery.index');
+    Route::post('gallery', [WebsiteManagementController::class, 'storeGallery'])->name('gallery.store');
+    Route::put('gallery/{image}', [WebsiteManagementController::class, 'updateGallery'])->name('gallery.update');
+    Route::delete('gallery/{image}', [WebsiteManagementController::class, 'destroyGallery'])->name('gallery.destroy');
+    Route::get('reviews', [WebsiteManagementController::class, 'reviews'])->name('reviews.index');
+    Route::put('reviews/{review}', [WebsiteManagementController::class, 'moderateReview'])->name('reviews.update');
+    Route::get('enquiries', [WebsiteManagementController::class, 'enquiries'])->name('enquiries.index');
+    Route::put('enquiries/{enquiry}', [WebsiteManagementController::class, 'updateEnquiry'])->name('enquiries.update');
+    Route::get('settings', [WebsiteManagementController::class, 'settings'])->name('settings.edit');
+    Route::put('settings', [WebsiteManagementController::class, 'updateSettings'])->name('settings.update');
+});

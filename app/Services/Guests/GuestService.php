@@ -44,7 +44,7 @@ class GuestService
      */
     public function forUser(User $user): Guest
     {
-        if ($user->guest !== null) {
+        if ($user->loadMissing('guest')->guest !== null) {
             return $user->guest;
         }
 

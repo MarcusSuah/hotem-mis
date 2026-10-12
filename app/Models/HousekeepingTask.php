@@ -15,8 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Cleaning or inspection work on a room.
- */
-/**
+ *
  * @property int $id
  * @property int $room_id
  * @property int|null $reservation_id

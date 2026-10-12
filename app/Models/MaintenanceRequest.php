@@ -16,8 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Repair work, optionally taking its room out of sale through a room block.
- */
-/**
+ *
  * @property int $id
  * @property string $reference
  * @property int|null $room_id

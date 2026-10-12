@@ -173,3 +173,46 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Rendered CMS Markdown on the public website. */
+@layer components {
+    .site-prose {
+        @apply max-w-none text-base leading-relaxed text-foreground/90;
+
+        & > * + * {
+            @apply mt-4;
+        }
+
+        & h2 {
+            @apply mt-10 font-display text-3xl font-semibold text-primary dark:text-foreground;
+        }
+
+        & h3 {
+            @apply mt-8 font-display text-2xl font-semibold text-primary dark:text-foreground;
+        }
+
+        & a {
+            @apply font-medium text-primary underline decoration-highlight underline-offset-4 dark:text-highlight;
+        }
+
+        & ul {
+            @apply list-disc space-y-1 pl-6;
+        }
+
+        & ol {
+            @apply list-decimal space-y-1 pl-6;
+        }
+
+        & blockquote {
+            @apply border-l-4 border-highlight pl-4 font-display text-xl text-muted-foreground italic;
+        }
+
+        & strong {
+            @apply font-semibold text-foreground;
+        }
+
+        & hr {
+            @apply my-8 border-border;
+        }
+    }
+}
