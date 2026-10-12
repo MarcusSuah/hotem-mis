@@ -1,5 +1,6 @@
 import {
     ArrowRightLeft,
+    Webhook,
     Banknote,
     BarChart3,
     Boxes,
@@ -104,6 +105,12 @@ export function adminNavigation(): NavGroup[] {
                     href: admin.invoices.index(),
                     icon: FileText,
                     permissions: ['invoices.view'],
+                },
+                {
+                    title: 'Online Payments',
+                    href: admin.gatewayEvents.index(),
+                    icon: Webhook,
+                    permissions: ['payments.view'],
                 },
                 {
                     title: 'Exchange Rates',

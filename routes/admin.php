@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\Billing\ExchangeRateController;
 use App\Http\Controllers\Admin\Billing\FolioController;
+use App\Http\Controllers\Admin\Billing\GatewayEventController;
 use App\Http\Controllers\Admin\Billing\InvoiceController;
 use App\Http\Controllers\Admin\Billing\PaymentController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -224,3 +225,7 @@ Route::prefix('website')->name('website.')->group(function () {
 Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
 Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
 Route::get('reports/room-usage', [ReportController::class, 'heatmap'])->name('reports.heatmap');
+
+// Online payment notifications
+Route::get('payment-gateway-events', [GatewayEventController::class, 'index'])->name('gateway-events.index');
+Route::post('payment-gateway-events/{event}/retry', [GatewayEventController::class, 'retry'])->name('gateway-events.retry');

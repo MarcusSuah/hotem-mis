@@ -42,6 +42,7 @@ class PaymentService
         ?string $notes = null,
         ?string $idempotencyKey = null,
         ?CarbonImmutable $receivedAt = null,
+        ?string $gateway = null,
     ): Payment {
         if ($idempotencyKey !== null && ($existing = Payment::query()->where('idempotency_key', $idempotencyKey)->first())) {
             return $existing;
@@ -58,7 +59,7 @@ class PaymentService
         $conversion = $this->converter->convert($amount, $folio->currency);
 
         try {
-            $payment = DB::transaction(function () use ($folio, $method, $amount, $actor, $externalReference, $notes, $idempotencyKey, $receivedAt, $conversion): Payment {
+            $payment = DB::transaction(function () use ($folio, $method, $amount, $actor, $externalReference, $notes, $idempotencyKey, $receivedAt, $conversion, $gateway): Payment {
                 $payment = Payment::create([
                     'reference' => $this->reference('PAY'),
                     'folio_id' => $folio->id,
@@ -70,6 +71,7 @@ class PaymentService
                     'exchange_rate_id' => $conversion->exchangeRate?->id,
                     'exchange_rate' => $conversion->rate,
                     'external_reference' => $externalReference,
+                    'gateway' => $gateway,
                     'notes' => $notes,
                     'received_by' => $actor?->id,
                     'received_at' => $receivedAt ?? now(),

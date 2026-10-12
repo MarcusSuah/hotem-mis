@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -23,7 +25,19 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 #[Fillable(['user_id', 'action', 'auditable_type', 'auditable_id', 'old_values', 'new_values', 'ip_address', 'user_agent'])]
 class AuditLog extends Model
 {
+    use MassPrunable;
+
     public const UPDATED_AT = null;
+
+    /**
+     * Entries older than the configured retention period are removed by model:prune.
+     *
+     * @return Builder<static>
+     */
+    public function prunable(): Builder
+    {
+        return static::query()->where('created_at', '<', now()->subDays(max(30, (int) config('hms.audit.retention_days', 730))));
+    }
 
     /**
      * @return BelongsTo<User, $this>

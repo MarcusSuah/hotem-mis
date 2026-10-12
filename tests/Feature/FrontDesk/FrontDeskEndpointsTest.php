@@ -177,3 +177,17 @@ it('refuses back-dated exchange rates', function () {
 
     expect(ExchangeRate::query()->sole()->created_by)->toBe($accountant->id);
 });
+
+it('asks for an exchange rate instead of failing when none is recorded', function () {
+    $reservation = todaysArrival();
+    $receptionist = User::factory()->withRole(SystemRole::Receptionist)->create();
+    ExchangeRate::query()->delete();
+
+    $this->actingAs($receptionist)
+        ->from(route('admin.folios.show', $reservation->folio))
+        ->post(route('admin.folios.payments.store', $reservation->folio), ['method' => 'cash', 'amount' => '5000', 'currency' => 'LRD', 'idempotency_key' => (string) Str::uuid()])
+        ->assertRedirect(route('admin.folios.show', $reservation->folio))
+        ->assertSessionHasErrors('currency');
+
+    expect(Payment::query()->count())->toBe(0);
+});

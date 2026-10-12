@@ -69,4 +69,45 @@ return [
         'retention_days' => (int) env('HMS_AUDIT_RETENTION_DAYS', 730),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Payment Gateways
+    |--------------------------------------------------------------------------
+    |
+    | Webhook endpoints are POST /webhooks/payments/{name}. A gateway is only
+    | reachable when enabled and given a secret. Card details are never sent
+    | to or stored by this application.
+    |
+    */
+
+    'payments' => [
+        'gateways' => [
+            'online' => [
+                'driver' => 'signed-webhook',
+                'enabled' => (bool) env('HMS_PAYMENT_WEBHOOK_ENABLED', false),
+                'secret' => env('HMS_PAYMENT_WEBHOOK_SECRET'),
+                'tolerance' => (int) env('HMS_PAYMENT_WEBHOOK_TOLERANCE', 300),
+                'method' => env('HMS_PAYMENT_WEBHOOK_METHOD', 'card'),
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Database Backups
+    |--------------------------------------------------------------------------
+    |
+    | hms:backup-database writes a compressed dump to the private disk and
+    | keeps it for the configured number of days. Copy backups off the
+    | server as well; a backup on the same disk is not a disaster recovery.
+    |
+    */
+
+    'backups' => [
+        'disk' => env('HMS_BACKUP_DISK', 'local'),
+        'path' => env('HMS_BACKUP_PATH', 'backups'),
+        'keep_days' => (int) env('HMS_BACKUP_KEEP_DAYS', 14),
+        'mysqldump' => env('HMS_MYSQLDUMP_PATH', 'mysqldump'),
+    ],
+
 ];

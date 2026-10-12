@@ -8,6 +8,7 @@ use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\RoomController;
 use App\Http\Controllers\Site\SiteContentController;
 use App\Http\Controllers\Site\SitemapController;
+use App\Http\Controllers\Webhooks\PaymentWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,6 +23,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('sitemap.xml', SitemapController::class)->name('sitemap');
+Route::post('webhooks/payments/{gateway}', PaymentWebhookController::class)
+    ->middleware('throttle:120,1')
+    ->where('gateway', '[a-z0-9-]+')
+    ->name('webhooks.payments');
 Route::post('currency', CurrencyPreferenceController::class)->middleware('throttle:30,1')->name('currency.update');
 
 Route::name('site.')->group(function () {
