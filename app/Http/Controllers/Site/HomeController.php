@@ -4,18 +4,17 @@ namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdditionalService;
-use App\Models\GalleryImage;
 use App\Models\HotelEvent;
 use App\Models\Offer;
 use App\Models\Post;
 use App\Models\Review;
+use App\Models\Room;
 use App\Models\RoomType;
 use App\Services\Currency\DisplayCurrencyResolver;
 use App\Services\Settings\SettingsRepository;
 use App\Services\Website\ContentRenderer;
 use App\Services\Website\SitePresenter;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,7 +24,6 @@ class HomeController extends Controller
     {
         $currency = $currencies->resolve($request);
         $website = $settings->group('website');
-        $heroPath = $website['hero_image_path'] ?? null;
         $approved = Review::query()->approved();
 
         return Inertia::render('site/home', [
@@ -33,13 +31,23 @@ class HomeController extends Controller
                 'eyebrow' => $website['hero_eyebrow'] ?? null,
                 'title' => $website['hero_title'] ?? null,
                 'subtitle' => $website['hero_subtitle'] ?? null,
-                'image_url' => is_string($heroPath) && $heroPath !== '' ? Storage::disk(config('hms.uploads.public_disk'))->url($heroPath) : null,
+                'image_url' => $present->settingImage('hero_image_path'),
             ],
             'about' => [
                 'title' => $website['about_title'] ?? null,
+                'intro' => $website['about_intro'] ?? null,
                 'html' => $content->toHtml($website['about_body'] ?? null),
+                'image_url' => $present->settingImage('about_image_path'),
             ],
-            'rooms' => RoomType::query()->active()->orderByDesc('is_featured')->ordered()->with('images')->limit(3)->get()
+            'facts' => [
+                'rooms' => Room::query()->count(),
+                'room_types' => RoomType::query()->active()->count(),
+                'check_in' => $settings->get('booking.check_in_time'),
+            ],
+            'location' => [
+                'map_embed_url' => $settings->get('hotel.map_embed_url'),
+            ],
+            'rooms' => RoomType::query()->active()->orderByDesc('is_featured')->ordered()->with('images')->limit(6)->get()
                 ->map(fn (RoomType $type) => $present->roomTypeCard($type, $currency)),
             'offers' => Offer::query()->current()->with('roomType:id,slug,name')->orderBy('display_order')->limit(3)->get()
                 ->map(fn (Offer $offer) => $present->offerCard($offer)),
@@ -58,8 +66,7 @@ class HomeController extends Controller
                 'latest' => (clone $approved)->with(['guest:id,first_name,last_name', 'reservation:id,check_in_date'])->latest()->limit(3)->get()
                     ->map(fn (Review $review) => $present->review($review)),
             ],
-            'gallery' => GalleryImage::query()->where('is_published', true)->orderBy('display_order')->limit(6)->get()
-                ->map(fn (GalleryImage $image) => ['id' => $image->id, 'url' => $image->url, 'alt' => $image->alt_text]),
+            'gallery' => $present->hotelPhotos(7),
         ]);
     }
 }

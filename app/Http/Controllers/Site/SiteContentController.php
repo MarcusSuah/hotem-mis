@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Site;
 use App\Enums\GalleryCategory;
 use App\Http\Controllers\Controller;
 use App\Models\AdditionalService;
+use App\Models\Amenity;
 use App\Models\GalleryImage;
 use App\Models\HotelEvent;
 use App\Models\MenuCategory;
@@ -13,6 +14,9 @@ use App\Models\Offer;
 use App\Models\Page;
 use App\Models\Post;
 use App\Models\Review;
+use App\Models\Room;
+use App\Models\RoomType;
+use App\Services\Settings\SettingsRepository;
 use App\Services\Website\ContentRenderer;
 use App\Services\Website\SitePresenter;
 use Inertia\Inertia;
@@ -42,6 +46,34 @@ class SiteContentController extends Controller
                 'meta_description' => $page->meta_description ?? $page->summary ?? $this->content->excerpt($page->body),
                 'updated_at' => $page->updated_at?->toIso8601String(),
             ],
+        ]);
+    }
+
+    public function about(SettingsRepository $settings): Response
+    {
+        $website = $settings->group('website');
+        $approved = Review::query()->approved();
+
+        return Inertia::render('site/about', [
+            'about' => [
+                'title' => $website['about_title'] ?? null,
+                'intro' => $website['about_intro'] ?? null,
+                'html' => $this->content->toHtml($website['about_body'] ?? null),
+                'image_url' => $this->present->settingImage('about_image_path') ?? $this->present->settingImage('hero_image_path'),
+            ],
+            'facts' => [
+                'rooms' => Room::query()->count(),
+                'room_types' => RoomType::query()->active()->count(),
+                'rating' => round((float) (clone $approved)->avg('rating'), 1),
+                'reviews' => (clone $approved)->count(),
+                'check_in' => $settings->get('booking.check_in_time'),
+                'check_out' => $settings->get('booking.check_out_time'),
+            ],
+            'amenities' => Amenity::query()->where('is_active', true)->orderBy('display_order')->orderBy('name')->limit(12)->get()
+                ->map(fn (Amenity $amenity) => ['name' => $amenity->name, 'icon' => $amenity->icon]),
+            'services' => AdditionalService::query()->where('is_active', true)->orderByDesc('is_featured')->orderBy('display_order')->limit(4)->get()
+                ->map(fn (AdditionalService $service) => [...$service->only(['name', 'short_description']), 'image_url' => $service->image_url]),
+            'photos' => $this->present->hotelPhotos(9),
         ]);
     }
 

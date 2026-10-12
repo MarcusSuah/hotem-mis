@@ -75,6 +75,7 @@ class ReservationService
                     'status' => $status,
                     'check_in_date' => $data->stay->checkIn,
                     'check_out_date' => $data->stay->checkOut,
+                    'arrival_time' => $data->arrivalTime,
                     'nights' => $data->stay->nights(),
                     'adults' => $data->adults,
                     'children' => $data->children,

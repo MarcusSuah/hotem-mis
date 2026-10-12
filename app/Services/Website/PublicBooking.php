@@ -28,5 +28,6 @@ final readonly class PublicBooking
         public string $idempotencyKey,
         public ?Offer $offer = null,
         public ?User $user = null,
+        public ?string $arrivalTime = null,
     ) {}
 }

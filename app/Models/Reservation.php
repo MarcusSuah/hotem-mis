@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property PaymentStatus $payment_status
  * @property CarbonImmutable $check_in_date
  * @property CarbonImmutable $check_out_date
+ * @property string|null $arrival_time
  * @property int $nights
  * @property int $adults
  * @property int $children
@@ -70,7 +71,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 #[Fillable([
     'reference', 'property_id', 'guest_id', 'rate_plan_id', 'booked_by', 'source', 'status', 'payment_status',
-    'check_in_date', 'check_out_date', 'nights', 'adults', 'children',
+    'check_in_date', 'check_out_date', 'arrival_time', 'nights', 'adults', 'children',
     'contact_name', 'contact_email', 'contact_phone', 'special_requests',
     'currency', 'base_currency', 'exchange_rate_id', 'exchange_rate', 'tax_rate', 'service_charge_rate',
     'room_total_minor', 'extras_total_minor', 'discount_minor', 'service_charge_minor', 'tax_minor',

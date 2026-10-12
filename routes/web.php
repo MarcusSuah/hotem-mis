@@ -45,6 +45,7 @@ Route::name('site.')->group(function () {
     Route::get('events/{event}', [SiteContentController::class, 'event'])->name('events.show');
     Route::get('journal', [SiteContentController::class, 'blog'])->name('blog.index');
     Route::get('journal/{post}', [SiteContentController::class, 'post'])->name('blog.show');
+    Route::get('about', [SiteContentController::class, 'about'])->name('about');
     Route::get('gallery', [SiteContentController::class, 'gallery'])->name('gallery');
     Route::get('dining', [SiteContentController::class, 'dining'])->name('dining');
     Route::get('experiences', [SiteContentController::class, 'experiences'])->name('experiences');

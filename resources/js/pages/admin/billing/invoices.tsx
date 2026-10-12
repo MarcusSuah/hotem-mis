@@ -1,3 +1,4 @@
+import { DocumentPreview } from '@/components/admin/document-preview';
 import { Head, Link } from '@inertiajs/react';
 import { FileText, Printer, Search } from 'lucide-react';
 import { EmptyState } from '@/components/admin/empty-state';
@@ -210,22 +211,23 @@ export default function Invoices({
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                asChild
-                                                aria-label={`Download ${invoice.number}`}
-                                            >
-                                                <a
-                                                    href={admin.invoices.show.url(
-                                                        invoice.number,
-                                                    )}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                >
-                                                    <Printer />
-                                                </a>
-                                            </Button>
+                                            <DocumentPreview
+                                                url={admin.invoices.show.url(
+                                                    invoice.number,
+                                                )}
+                                                title={`Invoice ${invoice.number}`}
+                                                filename={`${invoice.number}.pdf`}
+                                                trigger={(open) => (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={open}
+                                                        aria-label={`Preview invoice ${invoice.number}`}
+                                                    >
+                                                        <Printer />
+                                                    </Button>
+                                                )}
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ))}

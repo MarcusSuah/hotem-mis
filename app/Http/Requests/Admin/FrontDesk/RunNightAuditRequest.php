@@ -18,6 +18,17 @@ class RunNightAuditRequest extends FormRequest
      */
     public function rules(): array
     {
-        return ['mark_no_shows' => ['boolean']];
+        return [
+            'no_shows' => ['array', 'max:200'],
+            'no_shows.*' => ['string', 'distinct', 'max:32'],
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function noShowReferences(): array
+    {
+        return array_values(array_map('strval', (array) $this->validated('no_shows', [])));
     }
 }

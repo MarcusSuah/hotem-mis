@@ -1,3 +1,4 @@
+import { DocumentPreview } from '@/components/admin/document-preview';
 import { Head, Link } from '@inertiajs/react';
 import { Banknote, Receipt, Search } from 'lucide-react';
 import { EmptyState } from '@/components/admin/empty-state';
@@ -238,22 +239,23 @@ export default function Payments({
                                             {payment.amount.formatted}
                                         </TableCell>
                                         <TableCell>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                asChild
-                                                aria-label={`Receipt ${payment.reference}`}
-                                            >
-                                                <a
-                                                    href={admin.payments.receipt.url(
-                                                        payment.reference,
-                                                    )}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                >
-                                                    <Receipt />
-                                                </a>
-                                            </Button>
+                                            <DocumentPreview
+                                                url={admin.payments.receipt.url(
+                                                    payment.reference,
+                                                )}
+                                                title={`Receipt ${payment.reference}`}
+                                                filename={`receipt-${payment.reference}.pdf`}
+                                                trigger={(open) => (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={open}
+                                                        aria-label={`Preview receipt ${payment.reference}`}
+                                                    >
+                                                        <Receipt />
+                                                    </Button>
+                                                )}
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ))}

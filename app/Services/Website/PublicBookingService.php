@@ -111,6 +111,7 @@ class PublicBookingService
             contactEmail: $booking->email,
             contactPhone: $booking->phone,
             holdMinutes: (int) $this->settings->get('booking.website_hold_hours', 24) * 60,
+            arrivalTime: $booking->arrivalTime,
         ));
 
         if ($reservation->wasRecentlyCreated && $this->settings->get('notifications.booking_confirmation', true)) {

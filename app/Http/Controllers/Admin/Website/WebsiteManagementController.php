@@ -43,7 +43,7 @@ class WebsiteManagementController extends Controller
         return Inertia::render('admin/website/gallery', [
             'images' => GalleryImage::query()->orderBy('category')->orderBy('display_order')->orderByDesc('id')->get()
                 ->map(fn (GalleryImage $image) => [
-                    ...$image->only(['id', 'alt_text', 'caption', 'display_order', 'is_published']),
+                    ...$image->only(['id', 'alt_text', 'caption', 'display_order', 'is_published', 'is_featured']),
                     'category' => $image->category->value,
                     'category_label' => $image->category->label(),
                     'url' => $image->url,
@@ -69,7 +69,7 @@ class WebsiteManagementController extends Controller
 
     public function updateGallery(WebsiteManagementRequest $request, GalleryImage $image): RedirectResponse
     {
-        $image->update([...$request->validated(), 'is_published' => $request->boolean('is_published')]);
+        $image->update([...$request->validated(), 'is_published' => $request->boolean('is_published'), 'is_featured' => $request->boolean('is_featured')]);
 
         return $this->saved(__('Photo updated.'));
     }
@@ -162,44 +162,56 @@ class WebsiteManagementController extends Controller
     {
         Gate::authorize(Permission::WebsiteManage->value);
 
-        $heroPath = $this->settings->get('website.hero_image_path');
-
         return Inertia::render('admin/website/settings', [
             'settings' => [
                 'hotel' => collect($this->settings->group('hotel'))->only(['name', 'tagline', 'email', 'phone', 'address']),
-                'website' => collect($this->settings->group('website'))->except(['hero_image_path']),
+                'website' => collect($this->settings->group('website'))->except(['hero_image_path', 'about_image_path']),
                 'social' => $this->settings->group('social'),
                 'seo' => $this->settings->group('seo'),
             ],
-            'heroImageUrl' => is_string($heroPath) && $heroPath !== '' ? Storage::disk(config('hms.uploads.public_disk'))->url($heroPath) : null,
+            'heroImageUrl' => $this->publicUrl($this->settings->get('website.hero_image_path')),
+            'aboutImageUrl' => $this->publicUrl($this->settings->get('website.about_image_path')),
+            'featuredPhotos' => GalleryImage::query()->where('is_published', true)->where('is_featured', true)->count(),
         ]);
     }
 
     public function updateSettings(WebsiteManagementRequest $request): RedirectResponse
     {
-        $validated = $request->safe()->except(['hero_image']);
-        $previousHero = $this->settings->get('website.hero_image_path');
-        $newHero = $request->hasFile('hero_image') ? $this->images->store($request->file('hero_image'), 'website') : null;
+        $validated = $request->safe()->except(['hero_image', 'about_image']);
+        $uploads = [];
 
-        DB::transaction(function () use ($validated, $newHero): void {
+        foreach (['hero_image' => 'hero_image_path', 'about_image' => 'about_image_path'] as $field => $setting) {
+            if ($request->hasFile($field)) {
+                $uploads[$setting] = ['new' => $this->images->store($request->file($field), 'website'), 'old' => $this->settings->get("website.{$setting}")];
+            }
+        }
+
+        DB::transaction(function () use ($validated, $uploads): void {
             foreach (['hotel', 'website', 'social', 'seo'] as $group) {
                 $values = $validated[$group] ?? [];
 
-                if ($group === 'website' && $newHero !== null) {
-                    $values['hero_image_path'] = $newHero;
+                if ($group === 'website') {
+                    foreach ($uploads as $setting => $paths) {
+                        $values[$setting] = $paths['new'];
+                    }
                 }
 
                 $this->settings->setMany($group, $values);
             }
         });
 
-        if ($newHero !== null) {
-            $this->images->delete(is_string($previousHero) ? $previousHero : null);
+        foreach ($uploads as $paths) {
+            $this->images->delete(is_string($paths['old']) ? $paths['old'] : null);
         }
 
         $this->audit->record('website.settings_updated', newValues: ['groups' => ['hotel', 'website', 'social', 'seo']]);
 
         return $this->saved(__('Website settings saved.'));
+    }
+
+    private function publicUrl(mixed $path): ?string
+    {
+        return is_string($path) && $path !== '' ? Storage::disk(config('hms.uploads.public_disk'))->url($path) : null;
     }
 
     private function saved(string $message): RedirectResponse

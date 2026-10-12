@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\Currency;
 use App\Models\Page;
 use App\Services\Currency\DisplayCurrencyResolver;
+use App\Services\FrontDesk\BackOfficeSummary;
 use App\Services\Settings\SettingsRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -60,7 +61,9 @@ class HandleInertiaRequests extends Middleware
                 'logo_url' => filled($hotel['logo_path'] ?? null) ? Storage::disk('public')->url($hotel['logo_path']) : null,
                 'social' => $this->settings->group('social'),
                 'url' => rtrim((string) config('app.url'), '/'),
+                'hero_image_url' => filled($this->settings->get('website.hero_image_path')) ? Storage::disk(config('hms.uploads.public_disk'))->url((string) $this->settings->get('website.hero_image_path')) : null,
             ],
+            'backOffice' => fn () => $user !== null && $user->isStaff() && $request->routeIs('admin.*') ? app(BackOfficeSummary::class)->for($user) : null,
             'sitePages' => fn () => $request->routeIs('admin.*') ? [] : Page::query()->published()->where('show_in_footer', true)->orderBy('display_order')->get(['title', 'slug']),
             'auth' => [
                 'user' => $user ? [

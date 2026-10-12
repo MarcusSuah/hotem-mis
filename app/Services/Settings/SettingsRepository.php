@@ -65,7 +65,9 @@ class SettingsRepository
             'hero_subtitle' => 'Ocean-view rooms, Liberian hospitality and a calm place to rest between meetings or adventures.',
             'hero_image_path' => null,
             'about_title' => 'A calm retreat in the heart of the city',
+            'about_intro' => null,
             'about_body' => null,
+            'about_image_path' => null,
             'booking_note' => 'Your reservation is held while our team confirms it and arranges your deposit.',
         ],
         'notifications' => [

@@ -42,6 +42,7 @@ class StoreReservationRequest extends FormRequest
             'phone' => ['exclude_with:guest_id', 'nullable', 'string', 'max:32'],
             'country_code' => ['exclude_with:guest_id', 'nullable', 'string', 'size:2'],
             'special_requests' => ['nullable', 'string', 'max:2000'],
+            'arrival_time' => ['nullable', 'date_format:H:i'],
             'confirm' => ['boolean'],
             'complimentary' => ['boolean'],
             'idempotency_key' => ['required', 'string', 'uuid'],

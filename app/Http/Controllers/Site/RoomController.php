@@ -44,6 +44,7 @@ class RoomController extends Controller
                 ->with(['guest:id,first_name,last_name', 'reservation:id,check_in_date'])
                 ->latest()->limit(3)->get()
                 ->map(fn (Review $review) => $this->present->review($review)),
+            'hotelPhotos' => $this->present->hotelPhotos(4, featuredOnly: true),
         ]);
     }
 }

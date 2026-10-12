@@ -4,6 +4,7 @@ namespace App\Services\Website;
 
 use App\Enums\Currency;
 use App\Models\Amenity;
+use App\Models\GalleryImage;
 use App\Models\HotelEvent;
 use App\Models\Offer;
 use App\Models\Post;
@@ -12,7 +13,9 @@ use App\Models\RoomType;
 use App\Models\RoomTypeImage;
 use App\Services\Currency\CurrencyConverter;
 use App\Services\Currency\MissingExchangeRateException;
+use App\Services\Settings\SettingsRepository;
 use App\Support\Money\Money;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Shapes public website data. Only fields meant for visitors leave here.
@@ -22,7 +25,43 @@ class SitePresenter
     public function __construct(
         private CurrencyConverter $converter,
         private ContentRenderer $content,
+        private SettingsRepository $settings,
     ) {}
+
+    /**
+     * A website photo chosen in website settings (hero_image_path, about_image_path).
+     */
+    public function settingImage(string $key): ?string
+    {
+        $path = $this->settings->get("website.{$key}");
+
+        return is_string($path) && $path !== '' ? Storage::disk(config('hms.uploads.public_disk'))->url($path) : null;
+    }
+
+    /**
+     * Published hotel photos, those picked for the homepage first.
+     *
+     * @return list<array{id: int, url: string, alt: string, caption: string|null, category: string}>
+     */
+    public function hotelPhotos(int $limit, bool $featuredOnly = false): array
+    {
+        return array_values(GalleryImage::query()
+            ->where('is_published', true)
+            ->when($featuredOnly, fn ($query) => $query->where('is_featured', true))
+            ->orderByDesc('is_featured')
+            ->orderBy('display_order')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (GalleryImage $image): array => [
+                'id' => $image->id,
+                'url' => $image->url,
+                'alt' => $image->alt_text,
+                'caption' => $image->caption,
+                'category' => $image->category->label(),
+            ])
+            ->all());
+    }
 
     /**
      * Standard nightly rate in the visitor's currency where a rate exists.

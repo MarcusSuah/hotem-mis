@@ -19,7 +19,7 @@ class SitemapController extends Controller
     {
         $urls = collect([
             ['loc' => route('home'), 'lastmod' => null],
-            ...collect(['site.rooms.index', 'site.offers.index', 'site.events.index', 'site.blog.index', 'site.gallery', 'site.dining', 'site.experiences', 'site.reviews', 'site.contact', 'site.booking.start'])
+            ...collect(['site.about', 'site.rooms.index', 'site.offers.index', 'site.events.index', 'site.blog.index', 'site.gallery', 'site.dining', 'site.experiences', 'site.reviews', 'site.contact', 'site.booking.start'])
                 ->map(fn (string $name) => ['loc' => route($name), 'lastmod' => null]),
         ])
             ->merge(RoomType::query()->active()->get(['slug', 'updated_at'])->map(fn (RoomType $type) => ['loc' => route('site.rooms.show', $type), 'lastmod' => $type->updated_at]))

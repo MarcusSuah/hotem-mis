@@ -154,6 +154,7 @@ class ReservationController extends Controller
             roomId: $request->filled('room_id') ? $request->integer('room_id') : null,
             specialRequests: $request->filled('special_requests') ? $request->string('special_requests')->toString() : null,
             confirmImmediately: $request->boolean('confirm'),
+            arrivalTime: $request->filled('arrival_time') ? $request->string('arrival_time')->toString() : null,
             complimentary: $request->boolean('complimentary'),
             idempotencyKey: $request->string('idempotency_key')->toString(),
         ), $request->user());

@@ -14,8 +14,10 @@ use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Services\Billing\FolioService;
 use App\Services\Booking\BookingException;
+use App\Services\Booking\CancellationCalculator;
 use App\Services\Booking\ReservationService;
 use App\Services\Settings\SettingsRepository;
+use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -31,6 +33,7 @@ class NightAuditService
         private ReservationService $reservations,
         private SettingsRepository $settings,
         private AuditLogger $audit,
+        private CancellationCalculator $cancellations,
     ) {}
 
     public function businessDate(): CarbonImmutable
@@ -55,13 +58,19 @@ class NightAuditService
             'pending_arrivals' => Reservation::query()
                 ->where('status', ReservationStatus::Confirmed->value)
                 ->whereDate('check_in_date', '<=', $date)
-                ->with('guest:id,first_name,last_name')
+                ->with(['guest:id,first_name,last_name', 'activeAllocations.room:id,number'])
                 ->orderBy('check_in_date')
-                ->get(['id', 'reference', 'guest_id', 'check_in_date'])
+                ->get()
                 ->map(fn (Reservation $reservation) => [
                     'reference' => $reservation->reference,
                     'guest' => $reservation->guest->full_name,
+                    'phone' => $reservation->contact_phone,
+                    'room' => $reservation->activeAllocations->first()?->room?->number,
+                    'nights' => $reservation->nights,
+                    'source' => $reservation->source->label(),
                     'check_in_date' => $reservation->check_in_date->toDateString(),
+                    'no_show_fee' => $this->cancellations->noShowFee($reservation),
+                    'deposit_paid' => Money::ofMinor($reservation->amount_paid_minor, $reservation->currency),
                 ]),
             'overdue_departures' => Reservation::query()
                 ->where('status', ReservationStatus::CheckedIn->value)
@@ -71,7 +80,13 @@ class NightAuditService
         ];
     }
 
-    public function run(?User $actor = null, bool $markNoShows = false): NightAudit
+    /**
+     * Close the business day. Guests who have not arrived are only marked as
+     * no-shows when named individually; everyone else stays expected.
+     *
+     * @param  list<string>  $noShowReferences
+     */
+    public function run(?User $actor = null, array $noShowReferences = []): NightAudit
     {
         $date = $this->businessDate();
 
@@ -83,7 +98,7 @@ class NightAuditService
             throw new BookingException("The business day {$date->format('d M Y')} has already been closed.", 'business_date');
         }
 
-        return DB::transaction(function () use ($date, $actor, $markNoShows): NightAudit {
+        return DB::transaction(function () use ($date, $actor, $noShowReferences): NightAudit {
             $inHouse = Reservation::query()
                 ->where('status', ReservationStatus::CheckedIn->value)
                 ->orderBy('id')
@@ -97,12 +112,19 @@ class NightAuditService
 
             $noShows = [];
 
-            if ($markNoShows) {
+            if ($noShowReferences !== []) {
                 $unarrived = Reservation::query()
                     ->where('status', ReservationStatus::Confirmed->value)
                     ->whereDate('check_in_date', '<=', $date)
+                    ->whereIn('reference', $noShowReferences)
                     ->orderBy('id')
                     ->get();
+
+                $unknown = array_diff($noShowReferences, $unarrived->pluck('reference')->all());
+
+                if ($unknown !== []) {
+                    throw new BookingException('These bookings are not awaiting arrival and cannot be marked as no-shows: '.implode(', ', $unknown).'.', 'no_shows');
+                }
 
                 foreach ($unarrived as $reservation) {
                     $this->reservations->markNoShow($reservation, $actor);

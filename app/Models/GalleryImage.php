@@ -19,11 +19,12 @@ use Illuminate\Support\Facades\Storage;
  * @property GalleryCategory $category
  * @property int $display_order
  * @property bool $is_published
+ * @property bool $is_featured
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
  * @property-read string $url
  */
-#[Fillable(['alt_text', 'caption', 'category', 'display_order', 'is_published'])]
+#[Fillable(['alt_text', 'caption', 'category', 'display_order', 'is_published', 'is_featured'])]
 class GalleryImage extends Model
 {
     /**
@@ -42,6 +43,7 @@ class GalleryImage extends Model
         return [
             'category' => GalleryCategory::class,
             'is_published' => 'boolean',
+            'is_featured' => 'boolean',
         ];
     }
 }

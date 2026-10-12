@@ -27,6 +27,7 @@ class PublicBookingRequest extends BookingSearchRequest
             'phone' => ['required', 'string', 'min:7', 'max:32', 'regex:/^[0-9+()\-\s]+$/'],
             'country_code' => ['nullable', 'string', 'size:2'],
             'special_requests' => ['nullable', 'string', 'max:1000'],
+            'arrival_time' => ['nullable', 'date_format:H:i'],
             'accept_terms' => ['accepted'],
             'idempotency_key' => ['required', 'uuid'],
             'website' => ['prohibited'],
@@ -63,6 +64,7 @@ class PublicBookingRequest extends BookingSearchRequest
             idempotencyKey: $this->string('idempotency_key')->toString(),
             offer: $this->offer(),
             user: $this->user(),
+            arrivalTime: $this->filled('arrival_time') ? $this->string('arrival_time')->toString() : null,
         );
     }
 }

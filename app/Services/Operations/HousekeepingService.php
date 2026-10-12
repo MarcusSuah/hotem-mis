@@ -250,6 +250,30 @@ class HousekeepingService
         });
     }
 
+    /**
+     * A supervisor's manual correction from the room board. Only "clean" and
+     * "dirty" can be set by hand; "inspected" still comes from an inspection,
+     * so the rule that rooms are inspected before sale cannot be bypassed.
+     */
+    public function markRoom(Room $room, HousekeepingStatus $status, User $actor): Room
+    {
+        if (! in_array($status, [HousekeepingStatus::Clean, HousekeepingStatus::Dirty], true)) {
+            throw new BookingException('Rooms can only be marked clean or dirty by hand; inspection sets them ready.', 'status');
+        }
+
+        $previous = $room->housekeeping_status;
+
+        if ($previous === $status) {
+            return $room;
+        }
+
+        $room->forceFill(['housekeeping_status' => $status])->save();
+
+        $this->audit->record('room.housekeeping_status_changed', $room, ['status' => $previous->value], ['status' => $status->value, 'source' => 'room_board'], actor: $actor);
+
+        return $room;
+    }
+
     private function setRoomStatus(HousekeepingTask $task, HousekeepingStatus $status): void
     {
         $room = $task->room;

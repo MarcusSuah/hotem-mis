@@ -18,9 +18,12 @@ use App\Http\Controllers\Admin\Identity\RoleController;
 use App\Http\Controllers\Admin\Identity\UserController;
 use App\Http\Controllers\Admin\Identity\UserStatusController;
 use App\Http\Controllers\Admin\Inventory\InventoryController;
+use App\Http\Controllers\Admin\GlobalSearchController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\ShiftNoteController;
 use App\Http\Controllers\Admin\Operations\HousekeepingController;
 use App\Http\Controllers\Admin\Operations\MaintenanceController;
+use App\Http\Controllers\Admin\Operations\RoomBoardController;
 use App\Http\Controllers\Admin\Outlets\CatalogController;
 use App\Http\Controllers\Admin\Outlets\OutletController;
 use App\Http\Controllers\Admin\Reports\ReportController;
@@ -53,6 +56,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', DashboardController::class)->name('dashboard');
+Route::get('search', GlobalSearchController::class)->middleware('throttle:60,1')->name('search');
+Route::post('shift-notes', [ShiftNoteController::class, 'store'])->name('shift-notes.store');
 
 Route::resource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);
 Route::post('users/bulk-delete', BulkUserDeletionController::class)->name('users.bulk-delete');
@@ -118,6 +123,8 @@ Route::post('notifications/read-all', [NotificationController::class, 'readAll']
 Route::post('notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
 
 // Housekeeping
+Route::get('room-board', [RoomBoardController::class, 'index'])->name('room-board.index');
+Route::put('room-board/{room}', [RoomBoardController::class, 'update'])->name('room-board.update');
 Route::get('housekeeping', [HousekeepingController::class, 'index'])->name('housekeeping.index');
 Route::post('housekeeping/tasks', [HousekeepingController::class, 'store'])->name('housekeeping.tasks.store');
 Route::put('housekeeping/tasks/{task}/assignment', [HousekeepingController::class, 'assign'])->name('housekeeping.tasks.assign');

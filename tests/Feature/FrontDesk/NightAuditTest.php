@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\ReservationStatus;
 use App\Models\FolioCharge;
 use App\Models\Guest;
+use App\Models\NightAudit;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomType;
@@ -77,13 +78,25 @@ it('closes each business day only once and never ahead of time', function () {
     expect(fn () => $audits->run())->toThrow(BookingException::class, 'The business day 10 Nov 2026 has already been closed.');
 });
 
-it('optionally marks guests who never arrived as no-shows', function () {
+it('marks only the guests the manager chose as no-shows', function () {
     $room = Room::factory()->create();
     $absent = Reservation::factory()->confirmed()->between('2026-11-10', '2026-11-12')->inRoom($room)->create();
+    $lateArrival = Reservation::factory()->confirmed()->between('2026-11-10', '2026-11-12')->inRoom(Room::factory()->create())->create();
 
-    $audit = app(NightAuditService::class)->run(markNoShows: true);
+    $audit = app(NightAuditService::class)->run(noShowReferences: [$absent->reference]);
 
     expect($absent->fresh()->status)->toBe(ReservationStatus::NoShow)
+        ->and($lateArrival->fresh()->status)->toBe(ReservationStatus::Confirmed)
         ->and($audit->summary['no_shows'])->toBe([$absent->reference])
         ->and($room->nights()->count())->toBe(0);
+});
+
+it('refuses to mark a booking that is not awaiting arrival', function () {
+    $inHouse = Reservation::factory()->checkedIn()->between('2026-11-09', '2026-11-12')->inRoom(Room::factory()->create())->create();
+
+    expect(fn () => app(NightAuditService::class)->run(noShowReferences: [$inHouse->reference]))
+        ->toThrow(BookingException::class, 'cannot be marked as no-shows');
+
+    expect($inHouse->fresh()->status)->toBe(ReservationStatus::CheckedIn)
+        ->and(NightAudit::query()->count())->toBe(0);
 });

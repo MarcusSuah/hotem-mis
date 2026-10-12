@@ -43,6 +43,7 @@ class WebsiteManagementRequest extends FormRequest
                 'category' => ['required', Rule::enum(GalleryCategory::class)],
                 'display_order' => ['required', 'integer', 'min:0', 'max:999'],
                 'is_published' => ['boolean'],
+                'is_featured' => ['boolean'],
             ],
             'admin.website.reviews.update' => [
                 'status' => ['required', Rule::enum(ReviewStatus::class)],
@@ -71,6 +72,8 @@ class WebsiteManagementRequest extends FormRequest
                 'seo.meta_title' => ['nullable', 'string', 'max:70'],
                 'seo.meta_description' => ['nullable', 'string', 'max:300'],
                 'hero_image' => ['nullable', ...ImageStorage::rules()],
+                'about_image' => ['nullable', ...ImageStorage::rules()],
+                'website.about_intro' => ['nullable', 'string', 'max:300'],
             ],
         };
     }

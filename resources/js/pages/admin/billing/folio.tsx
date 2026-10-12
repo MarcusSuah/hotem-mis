@@ -1,3 +1,4 @@
+import { DocumentPreview } from '@/components/admin/document-preview';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     CreditCard,
@@ -365,22 +366,23 @@ export default function Folio({ folio, options, can }: Props) {
                                         )}
                                     </div>
                                     <div className="flex gap-1">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <a
-                                                href={admin.payments.receipt.url(
-                                                    payment.reference,
-                                                )}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                <Receipt />
-                                                Receipt
-                                            </a>
-                                        </Button>
+                                        <DocumentPreview
+                                            url={admin.payments.receipt.url(
+                                                payment.reference,
+                                            )}
+                                            title={`Receipt ${payment.reference}`}
+                                            filename={`receipt-${payment.reference}.pdf`}
+                                            trigger={(open) => (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={open}
+                                                >
+                                                    <Receipt />
+                                                    Receipt
+                                                </Button>
+                                            )}
+                                        />
                                         {can.refund &&
                                             payment.refundable.minor > 0 && (
                                                 <Button
@@ -461,22 +463,23 @@ export default function Folio({ folio, options, can }: Props) {
                                         </p>
                                     </div>
                                     <div className="flex gap-1">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <a
-                                                href={admin.invoices.show.url(
-                                                    invoice.number,
-                                                )}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                <Printer />
-                                                PDF
-                                            </a>
-                                        </Button>
+                                        <DocumentPreview
+                                            url={admin.invoices.show.url(
+                                                invoice.number,
+                                            )}
+                                            title={`Invoice ${invoice.number}`}
+                                            filename={`${invoice.number}.pdf`}
+                                            trigger={(open) => (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={open}
+                                                >
+                                                    <Printer />
+                                                    PDF
+                                                </Button>
+                                            )}
+                                        />
                                         {can.invoice &&
                                             invoice.status === 'issued' && (
                                                 <Button

@@ -45,7 +45,7 @@ class NightAuditController extends Controller
 
     public function store(RunNightAuditRequest $request, NightAuditService $audits): RedirectResponse
     {
-        $audit = $audits->run($request->user(), $request->boolean('mark_no_shows'));
+        $audit = $audits->run($request->user(), $request->noShowReferences());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Business day :date closed.', ['date' => $audit->business_date->format('d M Y')])]);
 
