@@ -77,6 +77,16 @@ class HandleInertiaRequests extends Middleware
                 'display' => $this->displayCurrency($request),
                 'available' => Currency::codes(),
             ],
+            'notifications' => fn () => $user?->isStaff() ? [
+                'unread' => $user->unreadNotifications()->count(),
+                'recent' => $user->unreadNotifications()->limit(5)->get()->map(fn ($notification) => [
+                    'id' => $notification->id,
+                    'title' => $notification->data['title'] ?? 'Notification',
+                    'message' => $notification->data['message'] ?? '',
+                    'level' => $notification->data['level'] ?? 'info',
+                    'created_at' => $notification->created_at?->toIso8601String(),
+                ]),
+            ] : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

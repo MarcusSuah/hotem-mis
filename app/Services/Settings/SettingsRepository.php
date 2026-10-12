@@ -64,6 +64,10 @@ class SettingsRepository
             'review_invitation' => true,
             'low_stock_alert' => true,
         ],
+        'loyalty' => [
+            'enabled' => true,
+            'points_per_unit' => 1,
+        ],
         'operations' => [
             'business_date' => null,
             'audit_retention_days' => 730,

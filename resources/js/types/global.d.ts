@@ -1,5 +1,9 @@
 import type { Auth } from '@/types/auth';
-import type { CurrencyContext, HotelInfo } from '@/types/shared';
+import type {
+    CurrencyContext,
+    HotelInfo,
+    NotificationSummary,
+} from '@/types/shared';
 
 declare module 'react' {
     interface InputHTMLAttributes<T> {
@@ -14,6 +18,7 @@ declare module '@inertiajs/core' {
             hotel: HotelInfo;
             auth: Auth;
             currency: CurrencyContext;
+            notifications: NotificationSummary | null;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

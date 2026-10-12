@@ -61,6 +61,30 @@ class Guest extends Model
     }
 
     /**
+     * @return HasMany<GuestPreference, $this>
+     */
+    public function preferences(): HasMany
+    {
+        return $this->hasMany(GuestPreference::class)->orderBy('category')->orderBy('preference');
+    }
+
+    /**
+     * @return HasMany<Complaint, $this>
+     */
+    public function complaints(): HasMany
+    {
+        return $this->hasMany(Complaint::class)->latest('id');
+    }
+
+    /**
+     * @return HasMany<LoyaltyTransaction, $this>
+     */
+    public function loyaltyTransactions(): HasMany
+    {
+        return $this->hasMany(LoyaltyTransaction::class)->latest('id');
+    }
+
+    /**
      * @param  Builder<Guest>  $query
      */
     #[Scope]

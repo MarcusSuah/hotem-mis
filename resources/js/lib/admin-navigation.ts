@@ -1,6 +1,13 @@
 import {
     ArrowRightLeft,
     Banknote,
+    Boxes,
+    BookOpen,
+    ContactRound,
+    MessageSquareWarning,
+    Sparkles,
+    Utensils,
+    Wrench,
     BedDouble,
     ConciergeBell,
     FileText,
@@ -63,6 +70,12 @@ export function adminNavigation(): NavGroup[] {
                     permissions: ['guests.view'],
                 },
                 {
+                    title: 'Complaints',
+                    href: admin.complaints.index(),
+                    icon: MessageSquareWarning,
+                    permissions: ['guests.view'],
+                },
+                {
                     title: 'Night Audit',
                     href: admin.nightAudit.index(),
                     icon: MoonStar,
@@ -94,6 +107,53 @@ export function adminNavigation(): NavGroup[] {
             ],
         },
         {
+            label: 'Operations',
+            items: [
+                {
+                    title: 'Housekeeping',
+                    href: admin.housekeeping.index(),
+                    icon: Sparkles,
+                    permissions: [
+                        'housekeeping.manage',
+                        'housekeeping.perform',
+                    ],
+                },
+                {
+                    title: 'Maintenance',
+                    href: admin.maintenance.index(),
+                    icon: Wrench,
+                    permissions: [
+                        'maintenance.manage',
+                        'maintenance.perform',
+                        'maintenance.request',
+                    ],
+                },
+                {
+                    title: 'Inventory',
+                    href: admin.inventory.index(),
+                    icon: Boxes,
+                    permissions: ['inventory.manage'],
+                },
+            ],
+        },
+        {
+            label: 'Outlets',
+            items: [
+                {
+                    title: 'Restaurant & Services',
+                    href: admin.outlets.index(),
+                    icon: Utensils,
+                    permissions: ['orders.manage'],
+                },
+                {
+                    title: 'Menu & Services',
+                    href: admin.catalog.index(),
+                    icon: BookOpen,
+                    permissions: ['services.manage'],
+                },
+            ],
+        },
+        {
             label: 'Rooms',
             items: [
                 {
@@ -119,6 +179,12 @@ export function adminNavigation(): NavGroup[] {
         {
             label: 'Administration',
             items: [
+                {
+                    title: 'Staff',
+                    href: admin.staff.index(),
+                    icon: ContactRound,
+                    permissions: ['staff.manage'],
+                },
                 {
                     title: 'Users',
                     href: admin.users.index(),

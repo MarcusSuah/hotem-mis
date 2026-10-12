@@ -8,9 +8,14 @@ use App\Enums\ReservationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Guests\SaveGuestRequest;
 use App\Http\Resources\ReservationSummaryResource;
+use App\Models\Complaint;
 use App\Models\Guest;
+use App\Models\GuestPreference;
+use App\Models\LoyaltyTransaction;
 use App\Models\Reservation;
 use App\Services\Audit\AuditLogger;
+use App\Services\Guests\LoyaltyService;
+use App\Services\Settings\SettingsRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -59,7 +64,7 @@ class GuestController extends Controller
         ]);
     }
 
-    public function show(Request $request, Guest $guest): Response
+    public function show(Request $request, Guest $guest, LoyaltyService $loyalty, SettingsRepository $settings): Response
     {
         Gate::authorize(Permission::GuestsView->value);
 
@@ -92,6 +97,29 @@ class GuestController extends Controller
                 'cancellations' => $reservations->where('status', ReservationStatus::Cancelled)->count(),
                 'no_shows' => $reservations->where('status', ReservationStatus::NoShow)->count(),
             ],
+            'preferences' => $guest->preferences()->orderBy('category')->get()
+                ->map(fn (GuestPreference $preference) => $preference->only(['id', 'category', 'preference'])),
+            'loyalty' => [
+                'enabled' => (bool) $settings->get('loyalty.enabled', true),
+                'balance' => $loyalty->balance($guest),
+                'transactions' => $guest->loyaltyTransactions()->with('reservation:id,reference')->latest()->limit(20)->get()
+                    ->map(fn (LoyaltyTransaction $transaction) => [
+                        'id' => $transaction->id,
+                        'points' => $transaction->points,
+                        'reason' => $transaction->reason,
+                        'reservation' => $transaction->reservation?->reference,
+                        'created_at' => $transaction->created_at->toIso8601String(),
+                    ]),
+            ],
+            'complaints' => $guest->complaints()->latest()->limit(20)->get()
+                ->map(fn (Complaint $complaint) => [
+                    'reference' => $complaint->reference,
+                    'subject' => $complaint->subject,
+                    'status' => $complaint->status->value,
+                    'status_label' => $complaint->status->label(),
+                    'severity' => $complaint->severity->value,
+                    'created_at' => $complaint->created_at?->toIso8601String(),
+                ]),
             'currencies' => Currency::codes(),
             'can' => [
                 'update' => $request->user()->can(Permission::GuestsUpdate->value),

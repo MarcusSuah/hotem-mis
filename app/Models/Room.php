@@ -109,6 +109,22 @@ class Room extends Model
     }
 
     /**
+     * @return HasMany<HousekeepingTask, $this>
+     */
+    public function housekeepingTasks(): HasMany
+    {
+        return $this->hasMany(HousekeepingTask::class);
+    }
+
+    /**
+     * @return HasMany<MaintenanceRequest, $this>
+     */
+    public function maintenanceRequests(): HasMany
+    {
+        return $this->hasMany(MaintenanceRequest::class);
+    }
+
+    /**
      * @param  Builder<Room>  $query
      */
     #[Scope]

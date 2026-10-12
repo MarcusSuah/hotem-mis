@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             DemoStaffSeeder::class,
             HotelInventorySeeder::class,
             DemoReservationSeeder::class,
+            DemoOperationsSeeder::class,
         ]);
     }
 }

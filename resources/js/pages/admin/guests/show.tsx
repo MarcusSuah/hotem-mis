@@ -1,6 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
 import { IdCard, Mail, MapPin, Pencil, Phone, Star } from 'lucide-react';
 import { useState } from 'react';
+import { GuestCarePanels } from '@/components/admin/guests/guest-care-panels';
+import type {
+    GuestComplaint,
+    GuestLoyalty,
+    GuestPreference,
+} from '@/components/admin/guests/guest-care-panels';
 import { GuestFormDialog } from '@/components/admin/guests/guest-form-dialog';
 import type { EditableGuest } from '@/components/admin/guests/guest-form-dialog';
 import { PageHeader } from '@/components/admin/page-header';
@@ -31,6 +37,9 @@ export default function GuestShow({
     guest,
     reservations,
     stats,
+    preferences,
+    loyalty,
+    complaints,
     currencies,
     can,
 }: {
@@ -42,6 +51,9 @@ export default function GuestShow({
         cancellations: number;
         no_shows: number;
     };
+    preferences: GuestPreference[];
+    loyalty: GuestLoyalty;
+    complaints: GuestComplaint[];
     currencies: string[];
     can: { update: boolean; viewIdentity: boolean };
 }) {
@@ -208,6 +220,14 @@ export default function GuestShow({
                         </Table>
                     </section>
                 </div>
+
+                <GuestCarePanels
+                    guestId={guest.id}
+                    preferences={preferences}
+                    loyalty={loyalty}
+                    complaints={complaints}
+                    canUpdate={can.update}
+                />
             </div>
             <GuestFormDialog
                 open={editing}

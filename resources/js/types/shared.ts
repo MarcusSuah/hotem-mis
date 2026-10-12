@@ -39,3 +39,14 @@ export type Paginated<T> = {
     to: number | null;
     links: PaginationLink[];
 };
+
+export type NotificationSummary = {
+    unread: number;
+    recent: {
+        id: string;
+        title: string;
+        message: string;
+        level: string;
+        created_at: string | null;
+    }[];
+};
